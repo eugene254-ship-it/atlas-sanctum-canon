@@ -1,0 +1,6 @@
+{
+  "name": "Atlas Sanctum",
+  "description": "Regenerative Intelligence Operating System for civilization-scale inquiry, systems modeling, possibility discovery, and real-world intervention.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

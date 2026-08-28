@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #080808;
+    --bg-surface: #0c0c0c;
+    --bg-elevated: #121212;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-gold: #c5a059;
+    --gold-primary: #c5a059;
+    --gold-muted: #8e6e3d;
+  }
+
+  body {
+    background-color: #080808;
+    color: #f2f2f2;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Cormorant Garamond', 'Cinzel', serif;
+  }
+
+  .font-display {
+    font-family: 'Cinzel', serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Sophisticated Dark luxury subtle dot pattern */
+.bg-luxury-grid {
+  background-image: radial-gradient(rgba(197, 160, 89, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-luxury-subtle {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Custom hairline borders */
+.border-gold-subtle {
+  border-color: rgba(197, 160, 89, 0.3);
+}
+
+.border-white-subtle {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Custom scrollbar for dark luxury UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222222;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c5a059;
+}
+
+/* Neural Heartbeat CSS Keyframe Animations */
+@keyframes neural-heartbeat {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  12% {
+    transform: scale(1.35);
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #c5a059);
+  }
+  24% {
+    transform: scale(1.05);
+    opacity: 0.75;
+  }
+  36% {
+    transform: scale(1.25);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 5px #c5a059);
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+}
+
+@keyframes neural-pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+    border-color: rgba(197, 160, 89, 0.9);
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+    border-color: rgba(197, 160, 89, 0);
+  }
+}
+
+@keyframes ekg-glow-wave {
+  0%, 100% {
+    opacity: 0.4;
+    filter: brightness(0.9);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.3) drop-shadow(0 0 6px #c5a059);
+  }
+}
+
+.animate-neural-heartbeat {
+  animation: neural-heartbeat 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.animate-neural-heartbeat-fast {
+  animation: neural-heartbeat 1.1s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.animate-neural-pulse-ring {
+  animation: neural-pulse-ring 2.2s cubic-bezier(0.165, 0.84, 0.44, 1) infinite;
+}
+
+.animate-ekg-glow {
+  animation: ekg-glow-wave 2s ease-in-out infinite;
+}
+
+/* Contemplative Zen Mode Styles */
+.atlas-zen-mode {
+  background-color: #060606 !important;
+}
+
+.atlas-zen-mode .border,
+.atlas-zen-mode [class*="border-"] {
+  border-color: transparent !important;
+}
+
+.atlas-zen-mode .shadow-2xl,
+.atlas-zen-mode .shadow-lg,
+.atlas-zen-mode .shadow-md,
+.atlas-zen-mode .shadow-sm {
+  box-shadow: none !important;
+}
+
+.atlas-zen-mode .zen-hide {
+  display: none !important;
+}
+
+.atlas-zen-mode svg:not(.zen-keep-icon) {
+  opacity: 0.25;
+}
+
+.atlas-zen-mode button {
+  border-color: rgba(197, 160, 89, 0.2) !important;
+}
+

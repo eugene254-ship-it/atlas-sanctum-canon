@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { NavigationSpace } from "../types";
 import { soundscape } from "../services/soundscape";
+import { ResourceMonitor } from "./ResourceMonitor";
 
 interface SystemFooterProps {
   currentSpace: NavigationSpace;
@@ -359,6 +360,11 @@ export const SystemFooter: React.FC<SystemFooterProps> = ({
               </div>
             )}
           </div>
+
+          <span className="text-white/20 hidden sm:inline">|</span>
+
+          {/* Real-time D3 Dynamic Resource Monitor Sparklines */}
+          <ResourceMonitor />
 
           <span className="hidden sm:inline text-white/20">|</span>
 

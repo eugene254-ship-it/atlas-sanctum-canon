@@ -32,13 +32,14 @@ import {
   DollarSign,
   TrendingUp,
   MapPin,
-  Sun
+  Sun,
+  HeartHandshake
 } from "lucide-react";
 import { NavigationSpace } from "../types";
 
 export interface CommandItem {
   id: string;
-  category: "Navigation" | "Action" | "Inquiry" | "Context Action";
+  category: "Navigation" | "Action" | "Inquiry" | "Context Action" | "Macro";
   title: string;
   subtitle?: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -61,6 +62,7 @@ interface CommandPaletteProps {
   onOpenScratchpad?: () => void;
   onToggleDeepFocus?: () => void;
   onToggleZenMode?: () => void;
+  onExecuteMacro?: (macroId: string) => void;
   isZenMode?: boolean;
   africaMode: boolean;
 }
@@ -81,11 +83,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenScratchpad,
   onToggleDeepFocus,
   onToggleZenMode,
+  onExecuteMacro,
   isZenMode = false,
   africaMode,
 }) => {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<"all" | "context" | "recents" | "navigation" | "actions">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "context" | "recents" | "navigation" | "actions" | "macros">("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>(() => {
     try {
@@ -123,6 +126,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       hotkey: "1",
       action: () => {
         onNavigate("home");
+        onClose();
+      },
+    },
+    {
+      id: "nav-partnerships",
+      category: "Navigation",
+      title: "ATLAS SANCTUM — Major Partnerships",
+      subtitle: "10 Strategic Relationship Targets across Frontier AI, Multilateral Finance & Foundations",
+      icon: HeartHandshake,
+      action: () => {
+        onNavigate("partnerships");
         onClose();
       },
     },
@@ -643,6 +657,91 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         onClose();
       },
     },
+
+    // User Macros (Multi-Step Workflows)
+    {
+      id: "macro-morning-routine",
+      category: "Macro",
+      title: "Macro: Launch Morning Routine",
+      subtitle: "Navigates to Overview, activates Soundscape, and opens Daily Executive Brief",
+      icon: Zap,
+      hotkey: "M1",
+      action: () => {
+        if (onExecuteMacro) {
+          onExecuteMacro("macro-morning-routine");
+        } else {
+          onNavigate("home");
+          onOpenDailyBrief();
+        }
+        onClose();
+      },
+    },
+    {
+      id: "macro-deep-work",
+      category: "Macro",
+      title: "Macro: Deep Work Sanctuary Protocol",
+      subtitle: "Engages Deep Focus, activates Alpha Soundscape, and navigates to Atlas Studio",
+      icon: Zap,
+      hotkey: "M2",
+      action: () => {
+        if (onExecuteMacro) {
+          onExecuteMacro("macro-deep-work");
+        } else {
+          onToggleDeepFocus?.();
+          onNavigate("studio");
+        }
+        onClose();
+      },
+    },
+    {
+      id: "macro-partnerships-brief",
+      category: "Macro",
+      title: "Macro: Major Partnerships & Sovereign Capital Sweep",
+      subtitle: "Opens Atlas Sanctum Partnerships to review 10 Frontier AI & Multilateral targets",
+      icon: Zap,
+      hotkey: "M3",
+      action: () => {
+        if (onExecuteMacro) {
+          onExecuteMacro("macro-partnerships-brief");
+        } else {
+          onNavigate("partnerships");
+        }
+        onClose();
+      },
+    },
+    {
+      id: "macro-planetary-audit",
+      category: "Macro",
+      title: "Macro: Planetary Boundaries & Systems Audit",
+      subtitle: "Enables Africa Lens, opens Systems Sunburst, and deploys Telemetry terminal",
+      icon: Zap,
+      hotkey: "M4",
+      action: () => {
+        if (onExecuteMacro) {
+          onExecuteMacro("macro-planetary-audit");
+        } else {
+          onNavigate("systems-modeling");
+          onToggleTelemetry();
+        }
+        onClose();
+      },
+    },
+    {
+      id: "macro-agent-swarm",
+      category: "Macro",
+      title: "Macro: Autonomous 10-Agent Swarm Deliberation",
+      subtitle: "Navigates to Agent Council and triggers collaborative multi-agent reasoning epoch",
+      icon: Zap,
+      hotkey: "M5",
+      action: () => {
+        if (onExecuteMacro) {
+          onExecuteMacro("macro-agent-swarm");
+        } else {
+          onNavigate("agents");
+        }
+        onClose();
+      },
+    },
   ], [
     onNavigate,
     onClose,
@@ -656,6 +755,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     onOpenSoundscape,
     onOpenScratchpad,
     onOpenShortcuts,
+    onExecuteMacro,
     africaMode
   ]);
 
@@ -685,6 +785,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       pool = commandItems.filter((i) => i.category === "Navigation");
     } else if (activeFilter === "actions") {
       pool = commandItems.filter((i) => i.category === "Action" || i.category === "Context Action");
+    } else if (activeFilter === "macros") {
+      pool = commandItems.filter((i) => i.category === "Macro");
     }
 
     const q = query.toLowerCase().trim();
@@ -837,6 +939,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             }`}
           >
             Actions & Tools
+          </button>
+          <button
+            onClick={() => setActiveFilter("macros")}
+            className={`px-2.5 py-1 border transition-all shrink-0 flex items-center space-x-1 ${
+              activeFilter === "macros"
+                ? "bg-[#c5a059] text-[#080808] border-[#c5a059] font-bold"
+                : "bg-[#111111] text-amber-300 hover:text-white border-amber-500/30"
+            }`}
+          >
+            <Zap className="w-3 h-3 text-amber-400" />
+            <span>User Macros (5)</span>
           </button>
         </div>
 

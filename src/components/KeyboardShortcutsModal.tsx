@@ -16,17 +16,28 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
     {
       title: "Global OS & System Controls",
       shortcuts: [
-        { key: "Ctrl + K / ⌘K", desc: "Open Global Command Palette" },
+        { key: "Ctrl + K / ⌘K", desc: "Open Global Command Palette & User Macros" },
+        { key: "P", desc: "Jump to ATLAS SANCTUM — Major Partnerships" },
         { key: "Z", desc: "Toggle Contemplative Zen Mode (Stripped UI)" },
         { key: "F", desc: "Toggle Deep Focus Mode (Immersive View)" },
         { key: "M", desc: "Toggle Ambient Generative Soundscape" },
         { key: "N", desc: "Toggle Ephemeral Ideation Scratchpad" },
         { key: "?", desc: "Open / Close this Keyboard Shortcuts Cheat Sheet" },
-        { key: "T", desc: "Toggle Real-Time System Telemetry Console" },
+        { key: "T", desc: "Toggle Real-Time System Telemetry & Event Log" },
         { key: "C", desc: "Open Canon of Greatness (20 Civilizational Pillars)" },
         { key: "B", desc: "Open Synchronized Daily Executive Brief" },
         { key: "A", desc: "Toggle Africa / Kenya Focus Intelligence Lens" },
         { key: "Esc", desc: "Dismiss active modal, palette, or drawer" },
+      ],
+    },
+    {
+      title: "User Macros (Automated Multi-Step Routines)",
+      shortcuts: [
+        { key: "⌘K → Launch Morning Routine", desc: "Overview + Ambient Soundscape + Daily Executive Brief" },
+        { key: "⌘K → Deep Work Sanctuary", desc: "Deep Focus + Alpha Soundscape + Atlas Studio Workspace" },
+        { key: "⌘K → Major Partnerships Sweep", desc: "Partnerships Sanctum + 10 Frontier AI Targets + Concessional Finance" },
+        { key: "⌘K → Planetary Systems Audit", desc: "Africa Lens + Systems Sunburst + Telemetry Stream" },
+        { key: "⌘K → Autonomous Agent Swarm", desc: "AI Agent Swarm + Socratic Multi-Agent Deliberation" },
       ],
     },
     {

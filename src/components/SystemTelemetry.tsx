@@ -15,8 +15,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Layers,
-  ArrowDown
+  ArrowDown,
+  Bell
 } from "lucide-react";
+import { SystemEventLog } from "./SystemEventLog";
 
 export type TelemetryLogLevel = "INFO" | "REASONING" | "LEVERAGE" | "WARN" | "SUCCESS";
 export type TelemetrySubsystem =
@@ -157,6 +159,7 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
   onClose,
   onNavigate,
 }) => {
+  const [activeTab, setActiveTab] = useState<"STREAM" | "EVENT_LOG">("EVENT_LOG");
   const [logs, setLogs] = useState<TelemetryLog[]>(INITIAL_LOGS);
   const [isStreaming, setIsStreaming] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -294,10 +297,32 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
                 SYSTEM TELEMETRY ENGINE
               </h3>
             </div>
-            <span className="hidden sm:inline text-white/20">|</span>
-            <span className="hidden sm:inline font-mono text-[10px] uppercase text-white/40 tracking-wider">
-              STREAM: {isStreaming ? "LIVE INFERENCE FEED" : "PAUSED"} · BUFFER: {logs.length} EVENTS
-            </span>
+
+            {/* Tab Selector */}
+            <div className="flex items-center space-x-1 bg-[#121212] p-0.5 border border-white/10 text-[10px] font-mono">
+              <button
+                onClick={() => setActiveTab("EVENT_LOG")}
+                className={`px-2.5 py-1 flex items-center space-x-1.5 transition-all ${
+                  activeTab === "EVENT_LOG"
+                    ? "bg-[#c5a059] text-[#080808] font-bold"
+                    : "text-white/50 hover:text-white"
+                }`}
+              >
+                <Bell className="w-3 h-3" />
+                <span>EVENT LOG & SEVERITY</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("STREAM")}
+                className={`px-2.5 py-1 flex items-center space-x-1.5 transition-all ${
+                  activeTab === "STREAM"
+                    ? "bg-[#c5a059] text-[#080808] font-bold"
+                    : "text-white/50 hover:text-white"
+                }`}
+              >
+                <Terminal className="w-3 h-3" />
+                <span>RAW STREAM</span>
+              </button>
+            </div>
           </div>
 
           {/* Action Toolbar */}
@@ -360,92 +385,101 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
           </div>
         </div>
 
-        {/* Filter Sub-bar */}
-        <div className="px-4 py-2 bg-[#0a0a0a] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-white/30 uppercase tracking-wider">Subsystem:</span>
-            {["ALL", "OBSERVATORY", "GEMINI-AI", "CAUSAL-GRAPH", "7-CAPITALS", "CONSCIENCE", "FINANCE-ROUTER"].map(
-              (sys) => (
-                <button
-                  key={sys}
-                  onClick={() => setSelectedSubsystem(sys)}
-                  className={`px-2 py-0.5 border transition-all ${
-                    selectedSubsystem === sys
-                      ? "bg-[#c5a059] text-[#080808] font-bold border-[#c5a059]"
-                      : "bg-[#111111] text-white/40 hover:text-white border-white/5"
-                  }`}
-                >
-                  {sys}
-                </button>
-              )
-            )}
+        {/* Tab Content */}
+        {activeTab === "EVENT_LOG" ? (
+          <div className="flex-1 overflow-hidden">
+            <SystemEventLog onNavigate={onNavigate} />
           </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1">
-              <span className="text-white/30 uppercase">Level:</span>
-              {["ALL", "INFO", "REASONING", "LEVERAGE", "SUCCESS"].map((lvl) => (
-                <button
-                  key={lvl}
-                  onClick={() => setSelectedLevel(lvl)}
-                  className={`px-1.5 py-0.5 border ${
-                    selectedLevel === lvl
-                      ? "bg-white/20 text-white border-white/40"
-                      : "text-white/30 hover:text-white/70 border-transparent"
-                  }`}
-                >
-                  {lvl}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setAutoScroll(!autoScroll)}
-              className={`px-2 py-0.5 border flex items-center space-x-1 ${
-                autoScroll
-                  ? "bg-emerald-950/40 text-emerald-300 border-emerald-800"
-                  : "bg-[#111111] text-white/30 border-white/5"
-              }`}
-            >
-              <ArrowDown className="w-2.5 h-2.5" />
-              <span>Auto-Scroll</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Real-Time Terminal Log Stream */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-1.5 font-mono text-xs bg-[#050505] selection:bg-[#c5a059]/30">
-          {filteredLogs.length === 0 ? (
-            <div className="py-12 text-center text-white/30 text-xs">
-              No telemetry events match the current filter criteria.
-            </div>
-          ) : (
-            filteredLogs.map((l) => (
-              <div
-                key={l.id}
-                className="py-1 px-2 hover:bg-[#0c0c0c] rounded-xs flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-3 text-[11px] leading-relaxed transition-colors border-l-2 border-transparent hover:border-[#c5a059]"
-              >
-                <span className="text-white/30 shrink-0 select-none">
-                  {l.timestamp}
-                </span>
-
-                <span
-                  className={`px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider shrink-0 w-28 text-center ${getLevelBadgeClass(
-                    l.level
-                  )}`}
-                >
-                  {l.subsystem}
-                </span>
-
-                <span className="text-white/80 font-mono break-words flex-1">
-                  <span className="text-white/30 mr-1.5">[{l.level}]</span>
-                  {l.message}
-                </span>
+        ) : (
+          <>
+            {/* Filter Sub-bar */}
+            <div className="px-4 py-2 bg-[#0a0a0a] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-white/30 uppercase tracking-wider">Subsystem:</span>
+                {["ALL", "OBSERVATORY", "GEMINI-AI", "CAUSAL-GRAPH", "7-CAPITALS", "CONSCIENCE", "FINANCE-ROUTER"].map(
+                  (sys) => (
+                    <button
+                      key={sys}
+                      onClick={() => setSelectedSubsystem(sys)}
+                      className={`px-2 py-0.5 border transition-all ${
+                        selectedSubsystem === sys
+                          ? "bg-[#c5a059] text-[#080808] font-bold border-[#c5a059]"
+                          : "bg-[#111111] text-white/40 hover:text-white border-white/5"
+                      }`}
+                    >
+                      {sys}
+                    </button>
+                  )
+                )}
               </div>
-            ))
-          )}
-          <div ref={logsEndRef} />
-        </div>
+
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-1">
+                  <span className="text-white/30 uppercase">Level:</span>
+                  {["ALL", "INFO", "REASONING", "LEVERAGE", "SUCCESS"].map((lvl) => (
+                    <button
+                      key={lvl}
+                      onClick={() => setSelectedLevel(lvl)}
+                      className={`px-1.5 py-0.5 border ${
+                        selectedLevel === lvl
+                          ? "bg-white/20 text-white border-white/40"
+                          : "text-white/30 hover:text-white/70 border-transparent"
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setAutoScroll(!autoScroll)}
+                  className={`px-2 py-0.5 border flex items-center space-x-1 ${
+                    autoScroll
+                      ? "bg-emerald-950/40 text-emerald-300 border-emerald-800"
+                      : "bg-[#111111] text-white/30 border-white/5"
+                  }`}
+                >
+                  <ArrowDown className="w-2.5 h-2.5" />
+                  <span>Auto-Scroll</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Real-Time Terminal Log Stream */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-1.5 font-mono text-xs bg-[#050505] selection:bg-[#c5a059]/30">
+              {filteredLogs.length === 0 ? (
+                <div className="py-12 text-center text-white/30 text-xs">
+                  No telemetry events match the current filter criteria.
+                </div>
+              ) : (
+                filteredLogs.map((l) => (
+                  <div
+                    key={l.id}
+                    className="py-1 px-2 hover:bg-[#0c0c0c] rounded-xs flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-3 text-[11px] leading-relaxed transition-colors border-l-2 border-transparent hover:border-[#c5a059]"
+                  >
+                    <span className="text-white/30 shrink-0 select-none">
+                      {l.timestamp}
+                    </span>
+
+                    <span
+                      className={`px-1.5 py-0.2 border text-[9px] font-bold uppercase tracking-wider shrink-0 w-28 text-center ${getLevelBadgeClass(
+                        l.level
+                      )}`}
+                    >
+                      {l.subsystem}
+                    </span>
+
+                    <span className="text-white/80 font-mono break-words flex-1">
+                      <span className="text-white/30 mr-1.5">[{l.level}]</span>
+                      {l.message}
+                    </span>
+                  </div>
+                ))
+              )}
+              <div ref={logsEndRef} />
+            </div>
+          </>
+        )}
 
         {/* Minimal Terminal Footer Status */}
         <div className="px-4 py-2 bg-[#0c0c0c] border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-white/40">

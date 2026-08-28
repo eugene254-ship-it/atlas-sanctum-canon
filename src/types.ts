@@ -5,6 +5,7 @@
 
 export type NavigationSpace =
   | "home"
+  | "partnerships"
   | "question-engine"
   | "observatory"
   | "world-model"
@@ -18,6 +19,72 @@ export type NavigationSpace =
   | "agents"
   | "patterns-memory"
   | "sdk-api";
+
+export type EventSeverity = "INFO" | "WARN" | "CRITICAL" | "SUCCESS";
+
+export interface SystemEventNotification {
+  id: string;
+  timestamp: string;
+  severity: EventSeverity;
+  subsystem: string;
+  title: string;
+  message: string;
+  actionTargetSpace?: NavigationSpace;
+  actionLabel?: string;
+  resolved?: boolean;
+  metadata?: Record<string, any>;
+}
+
+export interface UserMacro {
+  id: string;
+  title: string;
+  description: string;
+  category: "Workflow" | "Focus" | "Diagnostics" | "Intelligence";
+  hotkey?: string;
+  iconName?: string;
+  steps: string[];
+}
+
+export interface PartnershipTarget {
+  id: string;
+  carouselPosition: string; // e.g. "01", "02"
+  organization: string;
+  strategicRole: string;
+  strategicPriority?: "High" | "Medium" | "Low";
+  category: "Frontier AI & Cloud" | "Multilateral & Development Finance" | "Philanthropic Foundations" | "Digital & Economic Infrastructure";
+  pillarAlignment: number[]; // Canon Pillar IDs
+  focusAreas: string[];
+  capabilitiesOffered: string[];
+  strategicRationale: string;
+  jointInitiatives: {
+    name: string;
+    horizon: string;
+    targetOutcome: string;
+    status: "Exploring" | "Blueprint Ready" | "Active Pilot" | "Scaling";
+  }[];
+  measurableImpactTarget: string;
+  keyStakeholders: string[];
+  readinessScore: number; // 0-100
+  badgeColor?: string;
+  sevenCapitalsScores?: Record<SevenCapitalType, number>;
+  sevenCapitalsReportCard?: Record<
+    SevenCapitalType,
+    {
+      score: number;
+      valueCreated: string;
+      valuePreserved: string;
+      riskOrDisplacement: string;
+      leverageMechanism: string;
+    }
+  >;
+  multiYearRoadmap?: {
+    phase: string;
+    timeline: string;
+    milestone: string;
+    deliverables: string[];
+  }[];
+  isSyncedToMissionControl?: boolean;
+}
 
 export interface CanonPillar {
   id: number;

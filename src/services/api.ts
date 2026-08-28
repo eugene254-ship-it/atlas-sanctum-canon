@@ -222,3 +222,64 @@ The inquiry touches the deep intersection of **Truth (Canon #3)**, **Systems Dyn
 3. **Actionable Hypothesis:** If we replace extractive centralized intermediaries with transparent, community-owned cybernetic protocols, transaction velocity will increase by >3× while total lifecycle costs fall by >60%.
 4. **Immediate Next Step:** Formulate the smallest real-world intervention to test this mechanism under rigorous falsification criteria.`;
 }
+
+/**
+ * Knowledge Graph & SEO Search Compounding Subsystem API Client
+ */
+export async function fetchSeoOverview() {
+  try {
+    const res = await fetch("/api/seo/overview");
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch SEO overview:", err);
+    return null;
+  }
+}
+
+export async function fetchKnowledgeGraphNodes(domain?: string, query?: string) {
+  try {
+    const params = new URLSearchParams();
+    if (domain) params.append("domain", domain);
+    if (query) params.append("query", query);
+    const res = await fetch(`/api/seo/knowledge-graph?${params.toString()}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch knowledge graph nodes:", err);
+    return null;
+  }
+}
+
+export async function resolveQueryIntentApi(query: string) {
+  try {
+    const res = await fetch("/api/seo/query-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to resolve query intent:", err);
+    return null;
+  }
+}
+
+export async function fetchEntityDetailApi(entityId: string) {
+  try {
+    const res = await fetch(`/api/seo/entity/${encodeURIComponent(entityId)}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch entity detail:", err);
+    return null;
+  }
+}
+
+export async function fetchDecayAuditApi() {
+  try {
+    const res = await fetch("/api/seo/decay-audit");
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch decay audit:", err);
+    return null;
+  }
+}
+

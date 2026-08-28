@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { NavigationSpace } from "./types";
+import { SystemProvider, useSystemState } from "./context/SystemContext";
 import { Navigation } from "./components/Navigation";
 import { DailyBriefModal } from "./components/DailyBriefModal";
 import { CanonDrawer } from "./components/CanonDrawer";
@@ -9,7 +11,7 @@ import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 import { SystemFooter } from "./components/SystemFooter";
 import { SoundscapeModal } from "./components/SoundscapeModal";
 import { ScratchpadDrawer } from "./components/ScratchpadDrawer";
-import { Minimize, Sun } from "lucide-react";
+import { Minimize, Sun, Zap, CheckCircle2 } from "lucide-react";
 
 import { HomeScreen } from "./components/views/HomeScreen";
 import { QuestionEngineView } from "./components/views/QuestionEngineView";
@@ -25,28 +27,45 @@ import { ScenarioEngineView } from "./components/views/ScenarioEngineView";
 import { AgentNetworkView } from "./components/views/AgentNetworkView";
 import { MemoryPatternView } from "./components/views/MemoryPatternView";
 import { ApiExplorerView } from "./components/views/ApiExplorerView";
+import { PartnershipSanctumView } from "./components/views/PartnershipSanctumView";
 
-export default function App() {
-  const [currentSpace, setCurrentSpace] = useState<NavigationSpace>("home");
-  const [isDailyBriefOpen, setIsDailyBriefOpen] = useState(false);
-  const [isCanonOpen, setIsCanonOpen] = useState(false);
-  const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isSoundscapeOpen, setIsSoundscapeOpen] = useState(false);
-  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
-  const [isDeepFocus, setIsDeepFocus] = useState(false);
-  const [isZenMode, setIsZenMode] = useState(false);
-  const [africaMode, setAfricaMode] = useState(true);
-
-  // State for passing deep question selection
-  const [activeQuestionId, setActiveQuestionId] = useState<string | undefined>(undefined);
+function AppInner() {
+  const {
+    currentSpace,
+    setCurrentSpace,
+    isDailyBriefOpen,
+    setIsDailyBriefOpen,
+    isCanonOpen,
+    setIsCanonOpen,
+    isTelemetryOpen,
+    setIsTelemetryOpen,
+    isCommandPaletteOpen,
+    setIsCommandPaletteOpen,
+    isShortcutsOpen,
+    setIsShortcutsOpen,
+    isSoundscapeOpen,
+    setIsSoundscapeOpen,
+    isScratchpadOpen,
+    setIsScratchpadOpen,
+    isDeepFocus,
+    setIsDeepFocus,
+    isZenMode,
+    setIsZenMode,
+    africaMode,
+    setAfricaMode,
+    activeQuestionId,
+    setActiveQuestionId,
+    macroExecutionStatus,
+    executeMacro
+  } = useSystemState();
 
   const handleLaunchQuestion = (questionTitle: string) => {
+    setActiveQuestionId(undefined);
     setCurrentSpace("question-engine");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Global Keyboard Shortcuts (Ctrl+K, ?, T, C, B, A, F, Z, M, N, 1-9, 0, Esc)
+  // Global Keyboard Shortcuts (Ctrl+K, ?, T, C, B, A, F, Z, M, N, P, 1-9, 0, Esc)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -59,13 +78,21 @@ export default function App() {
       // Ctrl+K or Cmd+K (Always active, even in input)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        setIsCommandPaletteOpen(!isCommandPaletteOpen);
         return;
       }
 
       // Escape key closes modals / exits Deep Focus / Zen Mode
       if (e.key === "Escape") {
-        if (isCommandPaletteOpen || isShortcutsOpen || isDailyBriefOpen || isCanonOpen || isTelemetryOpen || isSoundscapeOpen || isScratchpadOpen) {
+        if (
+          isCommandPaletteOpen ||
+          isShortcutsOpen ||
+          isDailyBriefOpen ||
+          isCanonOpen ||
+          isTelemetryOpen ||
+          isSoundscapeOpen ||
+          isScratchpadOpen
+        ) {
           setIsCommandPaletteOpen(false);
           setIsShortcutsOpen(false);
           setIsDailyBriefOpen(false);
@@ -90,31 +117,35 @@ export default function App() {
 
       if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
-        setIsShortcutsOpen((prev) => !prev);
+        setIsShortcutsOpen(!isShortcutsOpen);
       } else if (e.key.toLowerCase() === "z") {
         e.preventDefault();
-        setIsZenMode((prev) => !prev);
+        setIsZenMode(!isZenMode);
       } else if (e.key.toLowerCase() === "f") {
         e.preventDefault();
-        setIsDeepFocus((prev) => !prev);
+        setIsDeepFocus(!isDeepFocus);
       } else if (e.key.toLowerCase() === "m") {
         e.preventDefault();
-        setIsSoundscapeOpen((prev) => !prev);
+        setIsSoundscapeOpen(!isSoundscapeOpen);
       } else if (e.key.toLowerCase() === "n") {
         e.preventDefault();
-        setIsScratchpadOpen((prev) => !prev);
+        setIsScratchpadOpen(!isScratchpadOpen);
       } else if (e.key.toLowerCase() === "t") {
         e.preventDefault();
-        setIsTelemetryOpen((prev) => !prev);
+        setIsTelemetryOpen(!isTelemetryOpen);
       } else if (e.key.toLowerCase() === "c") {
         e.preventDefault();
-        setIsCanonOpen((prev) => !prev);
+        setIsCanonOpen(!isCanonOpen);
       } else if (e.key.toLowerCase() === "b") {
         e.preventDefault();
-        setIsDailyBriefOpen((prev) => !prev);
+        setIsDailyBriefOpen(!isDailyBriefOpen);
       } else if (e.key.toLowerCase() === "a") {
         e.preventDefault();
-        setAfricaMode((prev) => !prev);
+        setAfricaMode(!africaMode);
+      } else if (e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        setCurrentSpace("partnerships");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (e.key === "1") {
         e.preventDefault();
         setCurrentSpace("home");
@@ -160,10 +191,52 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCommandPaletteOpen, isShortcutsOpen, isDailyBriefOpen, isCanonOpen, isTelemetryOpen, isSoundscapeOpen, isScratchpadOpen, isDeepFocus, isZenMode]);
+  }, [
+    isCommandPaletteOpen,
+    isShortcutsOpen,
+    isDailyBriefOpen,
+    isCanonOpen,
+    isTelemetryOpen,
+    isSoundscapeOpen,
+    isScratchpadOpen,
+    isDeepFocus,
+    isZenMode,
+    africaMode,
+    setCurrentSpace,
+    setIsDailyBriefOpen,
+    setIsCanonOpen,
+    setIsTelemetryOpen,
+    setIsCommandPaletteOpen,
+    setIsShortcutsOpen,
+    setIsSoundscapeOpen,
+    setIsScratchpadOpen,
+    setIsDeepFocus,
+    setIsZenMode,
+    setAfricaMode
+  ]);
 
   return (
-    <div className={`min-h-screen bg-[#080808] text-[#f2f2f2] font-sans selection:bg-[#c5a059]/30 selection:text-[#c5a059] ${isZenMode ? "atlas-zen-mode" : ""}`}>
+    <div
+      className={`min-h-screen bg-[#080808] text-[#f2f2f2] font-sans selection:bg-[#c5a059]/30 selection:text-[#c5a059] ${
+        isZenMode ? "atlas-zen-mode" : ""
+      }`}
+    >
+      {/* Floating Macro Execution Toast Notification */}
+      {macroExecutionStatus && (
+        <div className="fixed bottom-14 right-6 z-50 animate-fadeIn">
+          <div className="px-4 py-2.5 bg-[#0f0f0f]/95 border border-[#c5a059]/70 text-[#f2f2f2] font-mono text-xs shadow-2xl flex items-center space-x-2.5 backdrop-blur-md">
+            <Zap className="w-4 h-4 text-[#c5a059] animate-pulse" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[#c5a059] uppercase tracking-wider font-bold">
+                User Macro Active
+              </span>
+              <span className="text-white/90">{macroExecutionStatus}</span>
+            </div>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 ml-2" />
+          </div>
+        </div>
+      )}
+
       {/* Floating Deep Focus Exit Control */}
       {isDeepFocus && (
         <div className="fixed top-4 right-4 z-50 animate-fadeIn">
@@ -216,148 +289,172 @@ export default function App() {
         />
       )}
 
-      {/* Main Viewport Container */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isDeepFocus ? "pt-8 pb-12" : isZenMode ? "pt-10 pb-20" : "pt-6 pb-24"}`}>
-        {currentSpace === "home" && (
-          <HomeScreen
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            onLaunchQuestion={handleLaunchQuestion}
-            africaMode={africaMode}
-          />
-        )}
+      {/* Main Viewport Container with Framer Motion Route Transitions */}
+      <main
+        className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${
+          isDeepFocus ? "pt-8 pb-12" : isZenMode ? "pt-10 pb-20" : "pt-6 pb-24"
+        }`}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSpace}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            {currentSpace === "home" && (
+              <HomeScreen
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                onLaunchQuestion={handleLaunchQuestion}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "question-engine" && (
-          <QuestionEngineView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            initialSelectedQuestionId={activeQuestionId}
-          />
-        )}
+            {currentSpace === "partnerships" && (
+              <PartnershipSanctumView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "observatory" && (
-          <ObservatoryView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "question-engine" && (
+              <QuestionEngineView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                initialSelectedQuestionId={activeQuestionId}
+              />
+            )}
 
-        {currentSpace === "world-model" && (
-          <WorldModelView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "observatory" && (
+              <ObservatoryView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "systems-modeling" && (
-          <SystemsModelingView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "world-model" && (
+              <WorldModelView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "possibility-space" && (
-          <PossibilitySpaceView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "systems-modeling" && (
+              <SystemsModelingView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "studio" && (
-          <AtlasStudioView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "possibility-space" && (
+              <PossibilitySpaceView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "mission-control" && (
-          <MissionControlView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "studio" && (
+              <AtlasStudioView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "capital-intelligence" && (
-          <CapitalIntelligenceView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "mission-control" && (
+              <MissionControlView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "civilization-dashboard" && (
-          <CivilizationDashboardView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "capital-intelligence" && (
+              <CapitalIntelligenceView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "scenario-engine" && (
-          <ScenarioEngineView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "civilization-dashboard" && (
+              <CivilizationDashboardView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "agents" && (
-          <AgentNetworkView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "scenario-engine" && (
+              <ScenarioEngineView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "patterns-memory" && (
-          <MemoryPatternView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "agents" && (
+              <AgentNetworkView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
 
-        {currentSpace === "sdk-api" && (
-          <ApiExplorerView
-            onNavigate={(space) => {
-              setCurrentSpace(space);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            africaMode={africaMode}
-          />
-        )}
+            {currentSpace === "patterns-memory" && (
+              <MemoryPatternView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
+
+            {currentSpace === "sdk-api" && (
+              <ApiExplorerView
+                onNavigate={(space) => {
+                  setCurrentSpace(space);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                africaMode={africaMode}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Persistent Minimalist OS Footer (Hidden in Deep Focus) */}
@@ -407,6 +504,7 @@ export default function App() {
         onOpenScratchpad={() => setIsScratchpadOpen(true)}
         onToggleDeepFocus={() => setIsDeepFocus(!isDeepFocus)}
         onToggleZenMode={() => setIsZenMode(!isZenMode)}
+        onExecuteMacro={(macroId) => executeMacro(macroId)}
         isZenMode={isZenMode}
         africaMode={africaMode}
       />
@@ -452,3 +550,10 @@ export default function App() {
   );
 }
 
+export default function App() {
+  return (
+    <SystemProvider>
+      <AppInner />
+    </SystemProvider>
+  );
+}

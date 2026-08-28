@@ -3,6 +3,19 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import {
+  knowledgeGraph,
+  intentRouter,
+  contentMultiplier,
+  schemaGenerator,
+  aiSearchGrounding,
+  decayDetector,
+  seoAgentSwarm,
+  seoCommandEngine,
+  ATLAS_CORE_DOMAINS,
+  ATLAS_CANONICAL_PILLARS,
+  ATLAS_ORIGINAL_DATASETS,
+} from "./src/services/knowledgeGraph";
 
 dotenv.config();
 
@@ -107,6 +120,135 @@ async function startServer() {
       criticalBottlenecks: 3,
       emergingOpportunities: 6,
       activeMissions: 5,
+    });
+  });
+
+  // ==========================================
+  // ATLAS SEARCH COMPOUNDING & KNOWLEDGE APIS
+  // ==========================================
+
+  // SEO Command Center Overview & Health Metrics
+  app.get("/api/seo/overview", (req, res) => {
+    const state = seoCommandEngine.getCommandCenterState();
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      state,
+      domains: ATLAS_CORE_DOMAINS,
+      canonicalPillarsCount: ATLAS_CANONICAL_PILLARS.length,
+      datasetsCount: ATLAS_ORIGINAL_DATASETS.length,
+    });
+  });
+
+  // Full Knowledge Graph nodes & edges
+  app.get("/api/seo/knowledge-graph", (req, res) => {
+    const { domain, query } = req.query;
+    let nodes = knowledgeGraph.getAllNodes();
+    if (domain && typeof domain === "string") {
+      nodes = knowledgeGraph.getNodesByDomain(domain as any);
+    }
+    if (query && typeof query === "string") {
+      nodes = knowledgeGraph.searchKnowledgeGraph(query);
+    }
+    res.json({
+      success: true,
+      nodes,
+      edges: knowledgeGraph.getAllEdges(),
+    });
+  });
+
+  // Entity Details, Schema JSON-LD & Internal Link Relations
+  app.get("/api/seo/entity/:id", (req, res) => {
+    const { id } = req.params;
+    const node = knowledgeGraph.getNode(id);
+    if (!node) {
+      return res.status(404).json({ success: false, error: `Knowledge entity '${id}' not found.` });
+    }
+    const resolvedLinks = knowledgeGraph.resolveInternalLinks(node.id);
+    const jsonLd = schemaGenerator.generateArticleSchema(node);
+    const grounding = aiSearchGrounding.generateGroundingBlock(node.id);
+
+    res.json({
+      success: true,
+      node,
+      resolvedLinks,
+      jsonLd,
+      aiGrounding: grounding,
+    });
+  });
+
+  // Intent Classifier & Search-to-Product Loop Resolver
+  app.post("/api/seo/query-intent", (req, res) => {
+    const { query } = req.body;
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ success: false, error: "Query parameter string is required." });
+    }
+    const resolution = intentRouter.resolveQuery(query);
+    res.json({
+      success: true,
+      resolution,
+    });
+  });
+
+  // Dynamic XML Sitemap
+  app.get("/api/seo/sitemap.xml", (req, res) => {
+    const xml = seoCommandEngine.generateXmlSitemap();
+    res.header("Content-Type", "application/xml");
+    res.send(xml);
+  });
+
+  // Standard Robots.txt
+  app.get("/api/seo/robots.txt", (req, res) => {
+    const robots = seoCommandEngine.generateRobotsTxt();
+    res.header("Content-Type", "text/plain");
+    res.send(robots);
+  });
+
+  // Content Multiplier Generator (14-surface distribution graph)
+  app.get("/api/seo/multiplier/:id", (req, res) => {
+    const { id } = req.params;
+    const pkg = contentMultiplier.generateMultiplierPackage(id);
+    if (!pkg) {
+      return res.status(404).json({ success: false, error: `Entity '${id}' not found for distribution multiplier.` });
+    }
+    res.json({
+      success: true,
+      distributionPackage: pkg,
+    });
+  });
+
+  // Content Freshness & Decay Audit
+  app.get("/api/seo/decay-audit", (req, res) => {
+    const records = decayDetector.runDecayAudit();
+    res.json({
+      success: true,
+      totalAudited: records.length,
+      decayAlerts: records.filter((r) => r.decayRisk !== "HEALTHY"),
+      allRecords: records,
+    });
+  });
+
+  // Step an autonomous SEO Agent
+  app.post("/api/seo/agents/step", (req, res) => {
+    const { role, taskDescription } = req.body;
+    if (!role) {
+      return res.status(400).json({ success: false, error: "Agent role is required." });
+    }
+    const agent = seoAgentSwarm.stepAgent(role, taskDescription);
+    if (!agent) {
+      return res.status(404).json({ success: false, error: `Agent '${role}' not found.` });
+    }
+    res.json({
+      success: true,
+      agent,
+    });
+  });
+
+  // Benchmark Datasets
+  app.get("/api/seo/datasets", (req, res) => {
+    res.json({
+      success: true,
+      datasets: ATLAS_ORIGINAL_DATASETS,
     });
   });
 

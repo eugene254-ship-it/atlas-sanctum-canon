@@ -16,7 +16,8 @@ import {
   BarChart3,
   Flame,
   Search,
-  Sun
+  Sun,
+  HeartHandshake
 } from "lucide-react";
 
 interface NavigationProps {
@@ -50,6 +51,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const primaryNavItems: { id: NavigationSpace; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "home", label: "Overview", icon: Globe },
+    { id: "partnerships", label: "Major Partnerships", icon: HeartHandshake },
     { id: "question-engine", label: "Question Engine", icon: HelpCircle },
     { id: "observatory", label: "Observatory", icon: Activity },
     { id: "world-model", label: "World Model", icon: GitFork },

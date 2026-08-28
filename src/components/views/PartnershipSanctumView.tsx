@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PartnershipTarget, NavigationSpace } from "../../types";
 import { useSystemState } from "../../context/SystemContext";
-import { PartnershipNetworkGraph } from "../PartnershipNetworkGraph";
+import { PartnershipNetworkGraph, StrategicClusterType } from "../PartnershipNetworkGraph";
 import { PartnershipDeepAnalysisModal } from "../PartnershipDeepAnalysisModal";
 import {
   Globe,
@@ -38,7 +38,17 @@ import {
   SlidersHorizontal,
   ChevronDown,
   ChevronUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Boxes,
+  PieChart,
+  Target,
+  Zap,
+  Users,
+  TreePine,
+  ShieldAlert,
+  PanelRightClose,
+  PanelRightOpen,
+  Pin
 } from "lucide-react";
 
 export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
@@ -48,6 +58,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "Google Cloud",
     strategicRole: "AI, cloud infrastructure, geospatial intelligence, agentic systems",
     strategicPriority: "High",
+    strategicCluster: "Frontier Tech",
     category: "Frontier AI & Cloud",
     pillarAlignment: [2, 5, 10, 16],
     focusAreas: [
@@ -88,6 +99,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "OpenAI",
     strategicRole: "Frontier models, agents, reasoning, AI deployment",
     strategicPriority: "High",
+    strategicCluster: "Frontier Tech",
     category: "Frontier AI & Cloud",
     pillarAlignment: [1, 7, 12, 18],
     focusAreas: [
@@ -128,6 +140,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "Microsoft",
     strategicRole: "Cloud, enterprise AI, government and institutional transformation",
     strategicPriority: "Medium",
+    strategicCluster: "Frontier Tech",
     category: "Frontier AI & Cloud",
     pillarAlignment: [3, 8, 14, 19],
     focusAreas: [
@@ -168,6 +181,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "AWS",
     strategicRole: "Compute, data lakes, public sector programs, space technology",
     strategicPriority: "Medium",
+    strategicCluster: "Frontier Tech",
     category: "Frontier AI & Cloud",
     pillarAlignment: [2, 9, 13, 20],
     focusAreas: [
@@ -208,6 +222,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "UNDP",
     strategicRole: "Global development network, SDG alignment, policy frameworks, grassroots implementation",
     strategicPriority: "High",
+    strategicCluster: "Global Development",
     category: "Multilateral & Development Finance",
     pillarAlignment: [1, 6, 11, 17],
     focusAreas: [
@@ -248,6 +263,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "World Bank",
     strategicRole: "Development finance, systemic resilience, institutional capacity building",
     strategicPriority: "High",
+    strategicCluster: "Global Development",
     category: "Multilateral & Development Finance",
     pillarAlignment: [3, 7, 10, 15],
     focusAreas: [
@@ -288,6 +304,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "African Development Bank",
     strategicRole: "Continental mandate, blended finance, sovereign relationships, regional integration",
     strategicPriority: "High",
+    strategicCluster: "African Infrastructure",
     category: "Multilateral & Development Finance",
     pillarAlignment: [4, 8, 12, 16],
     focusAreas: [
@@ -328,6 +345,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "Gates Foundation",
     strategicRole: "Health, agriculture, AI-for-impact, evidence and scaling",
     strategicPriority: "High",
+    strategicCluster: "Global Development",
     category: "Philanthropic Foundations",
     pillarAlignment: [1, 5, 10, 16],
     focusAreas: [
@@ -368,6 +386,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "Rockefeller Foundation",
     strategicRole: "Climate, food systems, resilience, innovation and impact capital",
     strategicPriority: "Medium",
+    strategicCluster: "Global Development",
     category: "Philanthropic Foundations",
     pillarAlignment: [2, 6, 12, 17],
     focusAreas: [
@@ -408,6 +427,7 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
     organization: "Mastercard",
     strategicRole: "Digital payments, financial inclusion, SME and economic infrastructure",
     strategicPriority: "Medium",
+    strategicCluster: "African Infrastructure",
     category: "Digital & Economic Infrastructure",
     pillarAlignment: [4, 9, 15, 18],
     focusAreas: [
@@ -451,6 +471,13 @@ const STRATEGIC_CATEGORIES = [
   { id: "Digital & Economic Infrastructure", label: "Digital & Economic Infrastructure", count: 1, color: "text-rose-400", border: "border-rose-800", bg: "bg-rose-950/40" },
 ];
 
+const STRATEGIC_CLUSTERS: { id: StrategicClusterType; label: string; count: number; color: string; desc: string }[] = [
+  { id: "ALL", label: "All Strategic Clusters", count: 10, color: "text-[#c5a059]", desc: "Full pan-African and global regenerative coalition." },
+  { id: "Frontier Tech", label: "Frontier Tech", count: 4, color: "text-sky-400", desc: "Google Cloud, OpenAI, Microsoft, AWS compute & AI." },
+  { id: "Global Development", label: "Global Development", count: 4, color: "text-emerald-400", desc: "UNDP, World Bank, Gates & Rockefeller finance & health." },
+  { id: "African Infrastructure", label: "African Infrastructure", count: 2, color: "text-rose-400", desc: "AfDB & Mastercard sovereign rails and financial inclusion." },
+];
+
 interface PartnershipSanctumViewProps {
   onNavigate?: (space: NavigationSpace) => void;
   africaMode?: boolean;
@@ -464,6 +491,9 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
 
   // Multi-Filter Sidebar State
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(true);
+  const [isSummarySidebarOpen, setIsSummarySidebarOpen] = useState(true);
+
+  const [selectedCluster, setSelectedCluster] = useState<StrategicClusterType>("ALL");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([
     "Frontier AI & Cloud",
     "Multilateral & Development Finance",
@@ -494,6 +524,13 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
   // Derived Filtered Targets
   const filteredTargets = useMemo(() => {
     return PARTNERSHIP_TARGETS.filter((target) => {
+      // 0. Strategic Cluster Filter
+      if (selectedCluster !== "ALL") {
+        const targetCluster = target.strategicCluster || (target.category === "Frontier AI & Cloud" ? "Frontier Tech" : target.category === "Digital & Economic Infrastructure" ? "African Infrastructure" : "Global Development");
+        if (targetCluster !== selectedCluster) {
+          return false;
+        }
+      }
       // 1. Industry Focus Category Filter
       if (selectedCategories.length > 0 && !selectedCategories.includes(target.category)) {
         return false;
@@ -521,12 +558,97 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
       }
       return true;
     });
-  }, [selectedCategories, selectedPriorities, minReadiness, searchQuery]);
+  }, [selectedCluster, selectedCategories, selectedPriorities, minReadiness, searchQuery]);
+
+  // Aggregate Impact Calculations across filtered organizations
+  const aggregateMetrics = useMemo(() => {
+    const total = filteredTargets.length;
+    if (total === 0) {
+      return {
+        avgReadiness: 0,
+        aggregateImpactScore: 0,
+        blendedCapitalEst: "$0B",
+        popImpactEst: "0M",
+        extractiveRiskMitigation: 0,
+        clusterBreakdown: { "Frontier Tech": 0, "Global Development": 0, "African Infrastructure": 0 },
+        sevenCapitalsMean: {
+          Natural: 0,
+          Human: 0,
+          Social: 0,
+          Intellectual: 0,
+          Financial: 0,
+          Physical: 0,
+          Institutional: 0,
+        },
+      };
+    }
+
+    const sumReadiness = filteredTargets.reduce((acc, t) => acc + t.readinessScore, 0);
+    const avgReadiness = (sumReadiness / total).toFixed(1);
+
+    // Calculated systemic reach index
+    const aggregateImpactScore = (
+      Math.min(99.8, 80 + total * 1.6 + Number(avgReadiness) * 0.04)
+    ).toFixed(1);
+
+    // Blended Capital Mobilization Projection based on partner presence
+    const hasAfDB = filteredTargets.some((t) => t.id === "partner-07");
+    const hasWB = filteredTargets.some((t) => t.id === "partner-06");
+    const hasGates = filteredTargets.some((t) => t.id === "partner-08");
+    const hasRock = filteredTargets.some((t) => t.id === "partner-09");
+    const hasMastercard = filteredTargets.some((t) => t.id === "partner-10");
+
+    let capitalB = 0;
+    if (hasAfDB) capitalB += 8.5;
+    if (hasWB) capitalB += 10.0;
+    if (hasGates) capitalB += 3.2;
+    if (hasRock) capitalB += 2.0;
+    if (hasMastercard) capitalB += 2.1;
+    // Base tech compute & in-kind
+    capitalB += filteredTargets.filter((t) => t.category === "Frontier AI & Cloud").length * 1.5;
+
+    // Population reach calculation
+    let popM = 0;
+    if (filteredTargets.some((t) => t.id === "partner-01")) popM += 120;
+    if (filteredTargets.some((t) => t.id === "partner-08")) popM += 25;
+    if (filteredTargets.some((t) => t.id === "partner-09")) popM += 30;
+    if (filteredTargets.some((t) => t.id === "partner-10")) popM += 15;
+    if (hasAfDB) popM += 10;
+    if (popM === 0) popM = total * 12;
+
+    // Cluster count
+    const clusterBreakdown = {
+      "Frontier Tech": filteredTargets.filter((t) => t.strategicCluster === "Frontier Tech").length,
+      "Global Development": filteredTargets.filter((t) => t.strategicCluster === "Global Development").length,
+      "African Infrastructure": filteredTargets.filter((t) => t.strategicCluster === "African Infrastructure").length,
+    };
+
+    // 7 Capitals Mean Index
+    const sevenCapitalsMean = {
+      Natural: Math.min(100, 75 + clusterBreakdown["Global Development"] * 5),
+      Human: Math.min(100, 80 + clusterBreakdown["Global Development"] * 4),
+      Social: Math.min(100, 78 + clusterBreakdown["African Infrastructure"] * 8),
+      Intellectual: Math.min(100, 82 + clusterBreakdown["Frontier Tech"] * 4.5),
+      Financial: Math.min(100, 76 + clusterBreakdown["Global Development"] * 5),
+      Physical: Math.min(100, 72 + clusterBreakdown["African Infrastructure"] * 9),
+      Institutional: Math.min(100, 84 + (hasAfDB ? 8 : 0) + (hasWB ? 6 : 0)),
+    };
+
+    return {
+      avgReadiness,
+      aggregateImpactScore,
+      blendedCapitalEst: `$${capitalB.toFixed(1)}B`,
+      popImpactEst: `${popM}M+`,
+      extractiveRiskMitigation: (98.4 - (10 - total) * 0.4).toFixed(1),
+      clusterBreakdown,
+      sevenCapitalsMean,
+    };
+  }, [filteredTargets]);
 
   // Unique filter trigger key for Framer Motion animation emergence in D3 graph
   const filterTriggerKey = useMemo(() => {
-    return `${selectedCategories.sort().join("-")}_${selectedPriorities.join("-")}_${minReadiness}_${searchQuery}_${impactHeatmapEnabled}`;
-  }, [selectedCategories, selectedPriorities, minReadiness, searchQuery, impactHeatmapEnabled]);
+    return `${selectedCluster}_${selectedCategories.sort().join("-")}_${selectedPriorities.join("-")}_${minReadiness}_${searchQuery}_${impactHeatmapEnabled}`;
+  }, [selectedCluster, selectedCategories, selectedPriorities, minReadiness, searchQuery, impactHeatmapEnabled]);
 
   // Keep carousel and selected partner aligned with filtered targets
   useEffect(() => {
@@ -563,7 +685,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
   const toggleCategory = (catId: string) => {
     setSelectedCategories((prev) => {
       if (prev.includes(catId)) {
-        if (prev.length === 1) return prev; // Keep at least one or allow empty
+        if (prev.length === 1) return prev;
         return prev.filter((c) => c !== catId);
       } else {
         return [...prev, catId];
@@ -587,6 +709,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
 
   // Reset Filters
   const handleResetFilters = () => {
+    setSelectedCluster("ALL");
     setSelectedCategories([
       "Frontier AI & Cloud",
       "Multilateral & Development Finance",
@@ -607,7 +730,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
       severity: "INFO",
       subsystem: "PARTNERSHIPS",
       title: `7-Capitals Deep Analysis: ${target.organization}`,
-      message: `Simulating multi-capital yield curves and moral audits for ${target.organization}. Priority: ${target.strategicPriority || "High"}.`,
+      message: `Simulating multi-capital yield curves and moral audits for ${target.organization}. Priority: ${target.strategicPriority || "High"}. Cluster: ${target.strategicCluster || "Frontier Tech"}.`,
       actionTargetSpace: "partnerships",
     });
   };
@@ -649,6 +772,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
       "Carousel Position",
       "Organization",
       "Strategic Priority",
+      "Strategic Cluster",
       "Industry Category",
       "Readiness Score (%)",
       "Strategic Role",
@@ -676,6 +800,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
         escapeCSV(t.carouselPosition),
         escapeCSV(t.organization),
         escapeCSV(t.strategicPriority || "High"),
+        escapeCSV(t.strategicCluster || "Frontier Tech"),
         escapeCSV(t.category),
         escapeCSV(t.readinessScore),
         escapeCSV(t.strategicRole),
@@ -796,7 +921,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
               <div className="px-3.5 py-2 bg-[#080808] border border-white/10 flex items-center space-x-2">
                 <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="text-white/50">Catalytic Capital:</span>
-                <span className="text-emerald-400 font-bold">$25B+ Blended Stack</span>
+                <span className="text-emerald-400 font-bold">{aggregateMetrics.blendedCapitalEst} Active</span>
               </div>
               <div className="px-3.5 py-2 bg-[#080808] border border-white/10 flex items-center space-x-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
@@ -807,11 +932,26 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
 
             {/* Top Header Actions: Toggle Heatmap & Export Data & Sync All */}
             <div className="flex flex-wrap items-center gap-2.5 font-mono text-[10px]">
+              {/* Toggle Summary Sidebar Button */}
+              <button
+                id="btn-toggle-summary-sidebar"
+                onClick={() => setIsSummarySidebarOpen(!isSummarySidebarOpen)}
+                className={`px-3 py-2 border uppercase tracking-wider font-bold flex items-center space-x-1.5 transition-all ${
+                  isSummarySidebarOpen
+                    ? "bg-[#181818] border-[#c5a059] text-[#c5a059]"
+                    : "bg-[#121212] hover:bg-[#1a1a1a] border-white/15 text-white/70 hover:text-white"
+                }`}
+                title="Toggle Aggregate Impact Score Summary Sidebar"
+              >
+                {isSummarySidebarOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRightOpen className="w-3.5 h-3.5" />}
+                <span>Impact Summary</span>
+              </button>
+
               {/* Toggle Impact Heatmap Button */}
               <button
                 id="btn-hero-toggle-heatmap"
                 onClick={() => setImpactHeatmapEnabled(!impactHeatmapEnabled)}
-                className={`px-3.5 py-2 border uppercase tracking-wider font-bold flex items-center space-x-1.5 transition-all shadow-md ${
+                className={`px-3 py-2 border uppercase tracking-wider font-bold flex items-center space-x-1.5 transition-all shadow-md ${
                   impactHeatmapEnabled
                     ? "bg-gradient-to-r from-emerald-950 via-black to-amber-950 border-emerald-500 text-emerald-300"
                     : "bg-[#121212] hover:bg-[#1c1c1c] border-white/15 text-white/70 hover:text-white"
@@ -819,7 +959,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                 title="Toggle Strategic Priority Heatmap Intensity Overlay"
               >
                 <Flame className={`w-3.5 h-3.5 ${impactHeatmapEnabled ? "text-emerald-400 animate-bounce" : "text-amber-400"}`} />
-                <span>Impact Heatmap: {impactHeatmapEnabled ? "ON" : "OFF"}</span>
+                <span>Heatmap: {impactHeatmapEnabled ? "ON" : "OFF"}</span>
               </button>
 
               {/* Export Data Action (CSV) */}
@@ -830,7 +970,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                 title="Export currently filtered organization list to CSV report"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export Data (CSV)</span>
+                <span>Export CSV</span>
               </button>
 
               {/* Global Sync to System Button */}
@@ -844,6 +984,45 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Strategic Clusters Explorer Switcher Banner */}
+      <div className="p-4 bg-[#090909] border border-white/15 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-[#141414] border border-[#c5a059]/50 text-[#c5a059]">
+            <Boxes className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#c5a059] font-bold">
+              Strategic Clusters Explorer
+            </div>
+            <div className="text-xs text-white/60 font-sans">
+              Group organizations by sector focus for specialized exploration across the D3 ecosystem graph and portfolio.
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+          {STRATEGIC_CLUSTERS.map((cl) => {
+            const isSelected = selectedCluster === cl.id;
+            return (
+              <button
+                key={cl.id}
+                onClick={() => setSelectedCluster(cl.id)}
+                className={`px-3 py-1.5 border uppercase tracking-wider text-[10px] transition-all flex items-center space-x-1.5 ${
+                  isSelected
+                    ? "bg-[#181818] border-[#c5a059] text-[#c5a059] font-bold shadow-md"
+                    : "bg-[#101010] border-white/10 text-white/50 hover:text-white hover:border-white/20"
+                }`}
+              >
+                <span>{cl.label}</span>
+                <span className="px-1.5 py-0.2 bg-black/60 border border-white/10 text-[9px] text-white/40 font-bold">
+                  {cl.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -905,7 +1084,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
             title="Toggle Strategic Industry Focus Sidebar"
           >
             <Filter className="w-3.5 h-3.5" />
-            <span>{isFilterSidebarOpen ? "Hide Filter Sidebar" : "Filter Sidebar"}</span>
+            <span>{isFilterSidebarOpen ? "Hide Filters" : "Filter Sidebar"}</span>
             <span className="w-4 h-4 rounded-full bg-[#c5a059]/20 text-[#c5a059] text-[10px] flex items-center justify-center font-bold">
               {selectedCategories.length}
             </span>
@@ -913,9 +1092,9 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
         </div>
       </div>
 
-      {/* Main Workspace Layout with Responsive Filter Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* FILTER SIDEBAR (Left 3 cols when open) */}
+      {/* Main Workspace Layout with Responsive Filter Sidebar & Summary Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT FILTER SIDEBAR (3 cols when open) */}
         <AnimatePresence mode="wait">
           {isFilterSidebarOpen && (
             <motion.aside
@@ -941,8 +1120,36 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                 </button>
               </div>
 
-              {/* Search Box */}
+              {/* Strategic Clusters Quick Selector */}
               <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/50 block font-bold">
+                  Strategic Cluster
+                </label>
+                <div className="grid grid-cols-1 gap-1">
+                  {STRATEGIC_CLUSTERS.map((cl) => {
+                    const isSelected = selectedCluster === cl.id;
+                    return (
+                      <button
+                        key={cl.id}
+                        onClick={() => setSelectedCluster(cl.id)}
+                        className={`text-left p-2 text-xs font-mono transition-all border flex items-center justify-between ${
+                          isSelected
+                            ? "bg-[#141414] border-[#c5a059] text-[#c5a059] font-bold"
+                            : "bg-[#0c0c0c] border-white/5 text-white/50 hover:text-white"
+                        }`}
+                      >
+                        <span className="truncate">{cl.label}</span>
+                        <span className="text-[9px] px-1 bg-black/60 border border-white/10 text-white/40 font-bold">
+                          {cl.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Search Box */}
+              <div className="space-y-1.5 border-t border-white/10 pt-3">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-white/50 block">
                   Search Organizations & Focus
                 </label>
@@ -967,10 +1174,10 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
               </div>
 
               {/* Strategic Industry Focus Categories */}
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 border-t border-white/10 pt-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-mono uppercase tracking-wider text-white/50 block font-bold">
-                    Strategic Industry Focus
+                    Industry Focus
                   </label>
                   <span className="text-[10px] font-mono text-[#c5a059]">
                     {selectedCategories.length}/{STRATEGIC_CATEGORIES.length} Active
@@ -1060,28 +1267,6 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                 </div>
               </div>
 
-              {/* Quick Preset Buttons */}
-              <div className="pt-2 flex flex-col gap-1.5 text-[10px] font-mono">
-                <button
-                  onClick={() => {
-                    setSelectedCategories(["Frontier AI & Cloud"]);
-                    setSelectedPriorities(["High", "Medium"]);
-                  }}
-                  className="p-1.5 bg-[#121212] hover:bg-[#1a1a1a] border border-white/10 text-white/60 hover:text-white text-left"
-                >
-                  ⚡ Focus: Frontier AI & Cloud Only
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedCategories(["Multilateral & Development Finance"]);
-                    setSelectedPriorities(["High"]);
-                  }}
-                  className="p-1.5 bg-[#121212] hover:bg-[#1a1a1a] border border-white/10 text-white/60 hover:text-white text-left"
-                >
-                  🏛️ Focus: Multilateral Finance High Priority
-                </button>
-              </div>
-
               {/* Workspace Declutter Summary */}
               <div className="p-3 bg-[#050505] border border-white/10 text-[11px] font-mono text-white/60 space-y-1">
                 <div className="text-white/40 uppercase text-[9px]">Workspace State</div>
@@ -1094,14 +1279,22 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
           )}
         </AnimatePresence>
 
-        {/* MAIN WORKSPACE CONTENT AREA (Spans 9 or 12 cols depending on sidebar) */}
-        <div className={`${isFilterSidebarOpen ? "lg:col-span-9" : "lg:col-span-12"} space-y-8`}>
+        {/* MAIN WORKSPACE CONTENT AREA (Spans dynamic columns) */}
+        <div
+          className={`${
+            isFilterSidebarOpen && isSummarySidebarOpen
+              ? "lg:col-span-6"
+              : isFilterSidebarOpen || isSummarySidebarOpen
+              ? "lg:col-span-9"
+              : "lg:col-span-12"
+          } space-y-6`}
+        >
           {filteredTargets.length === 0 ? (
             <div className="p-12 bg-[#0c0c0c] border border-white/10 text-center space-y-4">
               <Filter className="w-8 h-8 text-white/20 mx-auto" />
               <h3 className="font-serif text-xl text-white font-light">No Organizations Match Active Filters</h3>
               <p className="text-xs text-white/50 max-w-md mx-auto">
-                Try enabling additional strategic industry categories, adjusting the priority tags, or clearing the search query.
+                Try enabling additional strategic clusters, industry categories, adjusting the priority tags, or clearing the search query.
               </p>
               <button
                 onClick={handleResetFilters}
@@ -1121,6 +1314,11 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                       <span>Target {currentIndex + 1} of {filteredTargets.length}</span>
                       <span className="text-white/20">•</span>
                       <span className="text-[#c5a059] font-bold">{selectedPartner.organization}</span>
+                      {selectedPartner.strategicCluster && (
+                        <span className="px-2 py-0.5 bg-[#161616] text-white/60 border border-white/10 text-[9px]">
+                          {selectedPartner.strategicCluster}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -1152,16 +1350,15 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                   </div>
 
                   {/* Featured Carousel Spotlight Card */}
-                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                    {/* Left Main Spotlight Card (7 cols) */}
+                  <div className="space-y-6">
                     <motion.div
                       key={selectedPartner.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25, ease: "easeOut" }}
-                      className="xl:col-span-7 space-y-6"
+                      className="space-y-6"
                     >
-                      <div className={`p-8 bg-[#0c0c0c] border space-y-6 relative overflow-hidden shadow-xl ${
+                      <div className={`p-6 sm:p-8 bg-[#0c0c0c] border space-y-6 relative overflow-hidden shadow-xl ${
                         impactHeatmapEnabled && selectedPartner.strategicPriority === "High"
                           ? "border-emerald-500/50 shadow-emerald-950/30"
                           : "border-white/15"
@@ -1173,10 +1370,15 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                         {/* Partner Card Header */}
                         <div className="space-y-3">
                           <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono uppercase tracking-[0.2em]">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span className="px-2.5 py-0.5 bg-[#161616] text-[#c5a059] border border-[#c5a059]/40 font-bold">
-                                POSITION {selectedPartner.carouselPosition} • {selectedPartner.category.toUpperCase()}
+                                POS {selectedPartner.carouselPosition} • {selectedPartner.category.toUpperCase()}
                               </span>
+                              {selectedPartner.strategicCluster && (
+                                <span className="px-2 py-0.5 bg-[#1a1a1a] text-sky-300 border border-sky-800/60 font-bold">
+                                  {selectedPartner.strategicCluster}
+                                </span>
+                              )}
                               <span className={`px-2 py-0.5 border font-bold ${getPriorityBadgeClass(selectedPartner.strategicPriority)}`}>
                                 {selectedPartner.strategicPriority || "High"} Priority
                               </span>
@@ -1242,6 +1444,38 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                           </div>
                         </div>
 
+                        {/* Joint Initiatives & Directives */}
+                        <div className="p-4 bg-[#080808] border border-white/10 space-y-3">
+                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                            <h5 className="text-[10px] font-mono text-[#c5a059] uppercase tracking-wider flex items-center space-x-1.5">
+                              <Sparkles className="w-3 h-3 text-[#c5a059]" />
+                              <span>Joint Initiatives & Flagships</span>
+                            </h5>
+                            <span className="text-[9px] font-mono text-white/40 uppercase">
+                              {selectedPartner.jointInitiatives.length} Active
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {selectedPartner.jointInitiatives.map((init, idx) => (
+                              <div key={idx} className="p-3 bg-[#0d0d0d] border border-white/5 space-y-1.5">
+                                <div className="flex items-center justify-between text-[10px] font-mono">
+                                  <span className="text-white font-bold">{init.name}</span>
+                                  <span className="px-1.5 py-0.2 bg-[#161616] text-[#c5a059] border border-[#c5a059]/40 text-[8px]">
+                                    {init.status}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-white/70 font-sans line-clamp-2">
+                                  {init.targetOutcome}
+                                </p>
+                                <div className="text-[9px] font-mono text-sky-400/80">
+                                  Horizon: {init.horizon}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
                         {/* Measurable Target & Action Row */}
                         <div className="p-4 bg-[#121212] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="space-y-1 max-w-md">
@@ -1281,67 +1515,12 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                         </div>
                       </div>
                     </motion.div>
-
-                    {/* Right Initiatives & Stakeholders Panel (5 cols) */}
-                    <div className="xl:col-span-5 space-y-6">
-                      {/* Joint Initiatives Card */}
-                      <div className="p-6 bg-[#0c0c0c] border border-white/15 space-y-4 shadow-xl">
-                        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                          <h4 className="font-serif text-base text-white font-light flex items-center space-x-2">
-                            <Sparkles className="w-4 h-4 text-[#c5a059]" />
-                            <span>Joint Flagship Initiatives</span>
-                          </h4>
-                          <span className="text-[10px] font-mono text-white/40 uppercase">
-                            {selectedPartner.jointInitiatives.length} Directives
-                          </span>
-                        </div>
-
-                        <div className="space-y-3">
-                          {selectedPartner.jointInitiatives.map((init, idx) => (
-                            <div key={idx} className="p-3.5 bg-[#080808] border border-white/5 space-y-2">
-                              <div className="flex items-center justify-between text-[10px] font-mono">
-                                <span className="text-[#c5a059] font-bold">{init.name}</span>
-                                <span className="px-2 py-0.5 bg-[#141414] border border-white/10 text-white/60">
-                                  {init.status}
-                                </span>
-                              </div>
-                              <p className="text-xs text-white/70 font-sans leading-relaxed">
-                                {init.targetOutcome}
-                              </p>
-                              <div className="text-[9px] font-mono text-sky-400/80">
-                                Horizon: {init.horizon}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Key Stakeholders & Directives Card */}
-                      <div className="p-6 bg-[#0c0c0c] border border-white/15 space-y-4 shadow-xl">
-                        <h4 className="font-serif text-base text-white font-light flex items-center space-x-2">
-                          <Building2 className="w-4 h-4 text-sky-400" />
-                          <span>Primary Stakeholders</span>
-                        </h4>
-
-                        <div className="space-y-2">
-                          {selectedPartner.keyStakeholders.map((sh, idx) => (
-                            <div
-                              key={idx}
-                              className="p-2.5 bg-[#080808] border border-white/5 text-xs text-white/80 font-mono flex items-center space-x-2"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
-                              <span>{sh}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Carousel Thumbnails Strip */}
-                  <div className="space-y-2 pt-4">
+                  <div className="space-y-2 pt-2">
                     <div className="text-[10px] font-mono uppercase tracking-wider text-white/40">
-                      Active Filtered Coalition Targets ({filteredTargets.length})
+                      Active Coalition Targets ({filteredTargets.length})
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                       {filteredTargets.map((target, idx) => {
@@ -1397,6 +1576,8 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                     impactHeatmapEnabled={impactHeatmapEnabled}
                     onToggleHeatmap={() => setImpactHeatmapEnabled(!impactHeatmapEnabled)}
                     filterTriggerKey={filterTriggerKey}
+                    selectedCluster={selectedCluster}
+                    onSelectCluster={(cl) => setSelectedCluster(cl)}
                   />
                 </motion.div>
               )}
@@ -1439,17 +1620,6 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                         <Send className="w-3.5 h-3.5 text-sky-400" />
                         <span>Sync All to Mission Control</span>
                       </button>
-
-                      <button
-                        onClick={() => {
-                          if (onNavigate) onNavigate("capital-intelligence");
-                          else navigateTo("capital-intelligence");
-                        }}
-                        className="px-3.5 py-2 bg-[#121212] hover:bg-[#1c1c1c] border border-white/15 text-white/80 hover:text-white uppercase tracking-[0.15em] flex items-center space-x-1.5 transition-all"
-                      >
-                        <DollarSign className="w-3.5 h-3.5 text-[#c5a059]" />
-                        <span>7-Capitals Balance</span>
-                      </button>
                     </div>
                   </div>
 
@@ -1459,7 +1629,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                         <tr>
                           <th className="py-3 px-4">Pos</th>
                           <th className="py-3 px-4">Organization</th>
-                          <th className="py-3 px-4">Strategic Role</th>
+                          <th className="py-3 px-4">Cluster</th>
                           <th className="py-3 px-4">Priority Tag</th>
                           <th className="py-3 px-4">Industry Focus</th>
                           <th className="py-3 px-4">Alignment</th>
@@ -1489,7 +1659,11 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="py-3 px-4 text-white/70 font-sans text-xs max-w-xs">{p.strategicRole}</td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 bg-[#141414] border border-white/10 text-[9px] text-[#c5a059] font-bold">
+                                  {p.strategicCluster || "Frontier Tech"}
+                                </span>
+                              </td>
                               <td className="py-3 px-4">
                                 <span className={`px-2 py-0.5 border text-[9px] font-bold ${getPriorityBadgeClass(p.strategicPriority)}`}>
                                   {p.strategicPriority || "High"} Priority
@@ -1544,6 +1718,163 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
             </>
           )}
         </div>
+
+        {/* RIGHT SUMMARY SIDEBAR: AGGREGATE IMPACT SCORE & SYSTEMIC REACH (3 cols when open) */}
+        <AnimatePresence mode="wait">
+          {isSummarySidebarOpen && (
+            <motion.aside
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 15 }}
+              transition={{ duration: 0.25 }}
+              className="lg:col-span-3 space-y-5 bg-[#090909] border border-white/15 p-5 shadow-xl sticky top-6"
+            >
+              {/* Summary Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-[#c5a059] font-bold">
+                  <Target className="w-4 h-4" />
+                  <span>Aggregate Impact Reach</span>
+                </div>
+                <button
+                  onClick={() => setIsSummarySidebarOpen(false)}
+                  className="text-white/40 hover:text-white p-1"
+                  title="Collapse summary sidebar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Main Aggregate Impact Score Hero Dial */}
+              <div className="p-4 bg-gradient-to-br from-[#14120b] to-[#0a0a0a] border border-[#c5a059]/40 space-y-2 shadow-inner">
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase text-[#c5a059]">
+                  <span className="font-bold">Systemic Reach Index</span>
+                  <span className="px-1.5 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">
+                    ACTIVE
+                  </span>
+                </div>
+
+                <div className="flex items-baseline space-x-2">
+                  <span className="font-serif text-4xl font-light text-white">
+                    {aggregateMetrics.aggregateImpactScore}
+                  </span>
+                  <span className="text-xs font-mono text-[#c5a059]">/ 100</span>
+                </div>
+
+                <div className="w-full bg-[#202020] h-2 rounded-full overflow-hidden">
+                  <motion.div
+                    className="bg-gradient-to-r from-[#c5a059] via-emerald-400 to-sky-400 h-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${aggregateMetrics.aggregateImpactScore}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
+                </div>
+
+                <div className="text-[10px] font-mono text-white/50 pt-1 flex justify-between">
+                  <span>Filtered Reach: {filteredTargets.length}/10</span>
+                  <span className="text-emerald-400 font-bold">{aggregateMetrics.avgReadiness}% Avg Align</span>
+                </div>
+              </div>
+
+              {/* Core Systemic Metrics Grid */}
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-white/50 font-bold">
+                  Top-Level Civilizational Yields
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 bg-[#0d0d0d] border border-white/10 space-y-1">
+                    <div className="text-[9px] font-mono text-white/40 uppercase">Catalytic Blended</div>
+                    <div className="font-serif text-lg text-emerald-400 font-light">
+                      {aggregateMetrics.blendedCapitalEst}
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-[#0d0d0d] border border-white/10 space-y-1">
+                    <div className="text-[9px] font-mono text-white/40 uppercase">Citizens Protected</div>
+                    <div className="font-serif text-lg text-sky-400 font-light">
+                      {aggregateMetrics.popImpactEst}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-[#0d0d0d] border border-white/10 space-y-1">
+                  <div className="flex items-center justify-between text-[9px] font-mono uppercase text-white/40">
+                    <span>Extractive Risk Mitigation</span>
+                    <span className="text-emerald-400 font-bold">{aggregateMetrics.extractiveRiskMitigation}%</span>
+                  </div>
+                  <div className="w-full bg-[#181818] h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-emerald-400 h-full"
+                      style={{ width: `${aggregateMetrics.extractiveRiskMitigation}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Cluster Breakdown */}
+              <div className="space-y-2 border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/50 font-bold">
+                  <span>Cluster Representation</span>
+                  <span className="text-[#c5a059]">{filteredTargets.length} Total</span>
+                </div>
+
+                <div className="space-y-1.5 text-xs font-mono">
+                  <div className="flex items-center justify-between p-2 bg-[#0c0c0c] border border-white/5">
+                    <span className="text-sky-400">Frontier Tech</span>
+                    <span className="font-bold text-white">{aggregateMetrics.clusterBreakdown["Frontier Tech"]} / 4</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-[#0c0c0c] border border-white/5">
+                    <span className="text-emerald-400">Global Development</span>
+                    <span className="font-bold text-white">{aggregateMetrics.clusterBreakdown["Global Development"]} / 4</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-[#0c0c0c] border border-white/5">
+                    <span className="text-rose-400">African Infrastructure</span>
+                    <span className="font-bold text-white">{aggregateMetrics.clusterBreakdown["African Infrastructure"]} / 2</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 7-Capitals Balance Index Bars */}
+              <div className="space-y-2 border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/50 font-bold">
+                  <span>7-Capitals Balance Index</span>
+                  <span className="text-emerald-400">Socratic</span>
+                </div>
+
+                <div className="space-y-1.5 text-[10px] font-mono">
+                  {Object.entries(aggregateMetrics.sevenCapitalsMean).map(([cap, val]) => {
+                    const numVal = Number(val);
+                    return (
+                      <div key={cap} className="space-y-0.5">
+                        <div className="flex justify-between text-white/60">
+                          <span>{cap}</span>
+                          <span className="font-bold text-white">{numVal.toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full bg-[#181818] h-1 rounded-full overflow-hidden">
+                          <div
+                            className="bg-[#c5a059] h-full"
+                            style={{ width: `${numVal}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quick Actions in Sidebar */}
+              <div className="pt-2 flex flex-col gap-2 font-mono text-[10px]">
+                <button
+                  onClick={() => handleSyncToSystem()}
+                  className="w-full py-2 bg-[#c5a059] text-black font-bold uppercase tracking-wider hover:bg-[#b08d48] transition-all flex items-center justify-center space-x-1.5 shadow-md"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Sync Filtered Portfolio</span>
+                </button>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Simulated Deep Analysis 7-Capitals Modal */}

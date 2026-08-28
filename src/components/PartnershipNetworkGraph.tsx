@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as d3 from "d3";
 import { motion, AnimatePresence } from "motion/react";
 import { PartnershipTarget, SevenCapitalType } from "../types";
@@ -16,19 +16,29 @@ import {
   Award,
   Flame,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Pin,
+  PinOff,
+  Play,
+  Pause,
+  Activity,
+  Boxes,
+  Compass,
+  Radio
 } from "lucide-react";
 
 export interface NetworkNode extends d3.SimulationNodeDatum {
   id: string;
   label: string;
-  type: "core" | "objective" | "partner" | "capital";
+  type: "core" | "objective" | "partner" | "capital" | "cluster";
   category?: string;
+  cluster?: "Frontier Tech" | "Global Development" | "African Infrastructure";
   priority?: "High" | "Medium" | "Low";
   readiness?: number;
   color?: string;
   radius?: number;
   partnerData?: PartnershipTarget;
+  isPinned?: boolean;
 }
 
 export interface NetworkLink extends d3.SimulationLinkDatum<NetworkNode> {
@@ -37,7 +47,11 @@ export interface NetworkLink extends d3.SimulationLinkDatum<NetworkNode> {
   relationship: string;
   nature: "compute" | "capital" | "policy" | "field" | "payments" | "governance";
   strength: number; // 1 to 5
+  lastUpdatedScenario?: string;
+  isPulsing?: boolean;
 }
+
+export type StrategicClusterType = "ALL" | "Frontier Tech" | "Global Development" | "African Infrastructure";
 
 interface PartnershipNetworkGraphProps {
   targets: PartnershipTarget[];
@@ -46,6 +60,8 @@ interface PartnershipNetworkGraphProps {
   impactHeatmapEnabled?: boolean;
   onToggleHeatmap?: () => void;
   filterTriggerKey?: string;
+  selectedCluster?: StrategicClusterType;
+  onSelectCluster?: (cluster: StrategicClusterType) => void;
 }
 
 const CORE_OBJECTIVES = [
@@ -91,6 +107,54 @@ const SEVEN_CAPITALS: { type: SevenCapitalType; label: string; color: string }[]
   { type: "Institutional", label: "Institutional Capital", color: "#3b82f6" },
 ];
 
+const SCENARIO_SIMULATION_EVENTS = [
+  {
+    id: "sc-01",
+    name: "Great Green Wall Concessional Debt Restructure",
+    cluster: "African Infrastructure",
+    description: "Syndicating $5B blended facility across AfDB & World Bank ledgers.",
+    targetPartnerIds: ["partner-06", "partner-07"],
+    nature: "capital",
+    deltaWeight: 2,
+  },
+  {
+    id: "sc-02",
+    name: "Sub-Meter Hydrological Earth Engine Spike",
+    cluster: "Frontier Tech",
+    description: "Google Cloud & AWS ingest 500TB raw multispectral flood telemetry.",
+    targetPartnerIds: ["partner-01", "partner-04"],
+    nature: "compute",
+    deltaWeight: 2.5,
+  },
+  {
+    id: "sc-03",
+    name: "Pan-African Socratic Multi-Agent Synthesis",
+    cluster: "Frontier Tech",
+    description: "OpenAI & Microsoft co-compile 10-Agent zero-bias civilizational audit.",
+    targetPartnerIds: ["partner-02", "partner-03"],
+    nature: "compute",
+    deltaWeight: 2,
+  },
+  {
+    id: "sc-04",
+    name: "Living Labs Agroforestry RCT Falsification",
+    cluster: "Global Development",
+    description: "Gates Foundation & Rockefeller validate 500k hectare soil biochar yield.",
+    targetPartnerIds: ["partner-08", "partner-09"],
+    nature: "field",
+    deltaWeight: 2,
+  },
+  {
+    id: "sc-05",
+    name: "Community Pass Micro-Dividend Settlement Wave",
+    cluster: "African Infrastructure",
+    description: "Mastercard rails process 1.2M instant carbon stewardship micropayments.",
+    targetPartnerIds: ["partner-10", "partner-05"],
+    nature: "payments",
+    deltaWeight: 2,
+  },
+];
+
 export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = ({
   targets,
   selectedPartnerId,
@@ -98,11 +162,14 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
   impactHeatmapEnabled = false,
   onToggleHeatmap,
   filterTriggerKey = "default",
+  selectedCluster = "ALL",
+  onSelectCluster,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const simulationRef = useRef<d3.Simulation<NetworkNode, NetworkLink> | null>(null);
 
-  const [activeFilter, setActiveFilter] = useState<string>("ALL");
+  const [activeCluster, setActiveCluster] = useState<StrategicClusterType>(selectedCluster);
   const [viewMode, setViewMode] = useState<"full" | "objectives" | "capitals">("full");
   const [showLabels, setShowLabels] = useState<boolean>(true);
   const [hoveredNode, setHoveredNode] = useState<NetworkNode | null>(null);
@@ -110,9 +177,31 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
   const [localHeatmap, setLocalHeatmap] = useState<boolean>(impactHeatmapEnabled);
   const [simulationIteration, setSimulationIteration] = useState(0);
 
+  // Node Pinning State
+  const [pinnedNodeId, setPinnedNodeId] = useState<string | null>(null);
+
+  // Auto-Update Scenario Link Simulation
+  const [isAutoUpdatingLinks, setIsAutoUpdatingLinks] = useState<boolean>(false);
+  const [currentScenarioIndex, setCurrentScenarioIndex] = useState<number>(0);
+  const [activeScenarioPulse, setActiveScenarioPulse] = useState<string | null>(null);
+  const [dynamicLinkModifiers, setDynamicLinkModifiers] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (selectedCluster !== activeCluster) {
+      setActiveCluster(selectedCluster);
+    }
+  }, [selectedCluster]);
+
   useEffect(() => {
     setLocalHeatmap(impactHeatmapEnabled);
   }, [impactHeatmapEnabled]);
+
+  const handleClusterChange = (cluster: StrategicClusterType) => {
+    setActiveCluster(cluster);
+    if (onSelectCluster) {
+      onSelectCluster(cluster);
+    }
+  };
 
   const handleToggleHeatmapInternal = () => {
     if (onToggleHeatmap) {
@@ -124,8 +213,47 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
 
   const isHeatmapActive = onToggleHeatmap ? impactHeatmapEnabled : localHeatmap;
 
-  // Build Graph Nodes & Links
-  const generateGraphData = () => {
+  // Auto-update Link Weights interval
+  useEffect(() => {
+    if (!isAutoUpdatingLinks) return;
+
+    const interval = setInterval(() => {
+      const nextIdx = (currentScenarioIndex + 1) % SCENARIO_SIMULATION_EVENTS.length;
+      const scenario = SCENARIO_SIMULATION_EVENTS[nextIdx];
+      setCurrentScenarioIndex(nextIdx);
+      setActiveScenarioPulse(scenario.name);
+
+      // Mutate edge modifiers
+      const newModifiers: Record<string, number> = {};
+      scenario.targetPartnerIds.forEach((pid) => {
+        newModifiers[pid] = Math.random() * 2 + 1;
+      });
+      setDynamicLinkModifiers(newModifiers);
+
+      // Re-heat simulation smoothly
+      if (simulationRef.current) {
+        simulationRef.current.alpha(0.25).restart();
+      }
+
+      setTimeout(() => {
+        setActiveScenarioPulse(null);
+      }, 2800);
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [isAutoUpdatingLinks, currentScenarioIndex]);
+
+  // Helper to map partner to strategic cluster
+  const getClusterForPartner = (p: PartnershipTarget): "Frontier Tech" | "Global Development" | "African Infrastructure" => {
+    if (p.strategicCluster) return p.strategicCluster;
+    if (p.category === "Frontier AI & Cloud") return "Frontier Tech";
+    if (p.category === "Multilateral & Development Finance" && p.organization.includes("African")) return "African Infrastructure";
+    if (p.category === "Digital & Economic Infrastructure") return "African Infrastructure";
+    return "Global Development";
+  };
+
+  // Build Graph Nodes & Links with Cluster and Pinning support
+  const generateGraphData = useCallback(() => {
     const nodes: NetworkNode[] = [];
     const links: NetworkLink[] = [];
 
@@ -137,6 +265,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       color: "#c5a059",
       priority: "High",
       radius: 28,
+      isPinned: pinnedNodeId === "atlas-core",
     });
 
     // 2. Objective Nodes
@@ -149,6 +278,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
           color: obj.color,
           priority: "High",
           radius: 18,
+          isPinned: pinnedNodeId === obj.id,
         });
 
         links.push({
@@ -171,6 +301,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
           color: cap.color,
           priority: "High",
           radius: 16,
+          isPinned: pinnedNodeId === `cap-${cap.type.toLowerCase()}`,
         });
 
         links.push({
@@ -185,30 +316,34 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
 
     // 4. Partner Nodes
     targets.forEach((p) => {
-      // Filter out if internal category filter is active
-      if (activeFilter !== "ALL" && p.category !== activeFilter) return;
+      const cluster = getClusterForPartner(p);
+      if (activeCluster !== "ALL" && cluster !== activeCluster) {
+        return;
+      }
 
       const priority = p.strategicPriority || (p.readinessScore >= 92 ? "High" : p.readinessScore >= 88 ? "Medium" : "Low");
       const partnerColor =
-        p.category === "Frontier AI & Cloud"
+        cluster === "Frontier Tech"
           ? "#38bdf8"
-          : p.category === "Multilateral & Development Finance"
-          ? "#34d399"
-          : p.category === "Philanthropic Foundations"
-          ? "#fbbf24"
-          : "#ec4899";
+          : cluster === "African Infrastructure"
+          ? "#ec4899"
+          : "#34d399";
 
       nodes.push({
         id: p.id,
         label: p.organization,
         type: "partner",
         category: p.category,
+        cluster: cluster,
         priority: priority,
         readiness: p.readinessScore,
         color: partnerColor,
         radius: 20 + (p.readinessScore - 80) * 0.4,
         partnerData: p,
+        isPinned: pinnedNodeId === p.id,
       });
+
+      const modifier = dynamicLinkModifiers[p.id] || 0;
 
       // Link to Core
       links.push({
@@ -216,10 +351,11 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         target: p.id,
         relationship: `Bilateral Alliance (${p.category})`,
         nature: p.category.includes("AI") ? "compute" : p.category.includes("Finance") ? "capital" : "policy",
-        strength: Math.round(p.readinessScore / 20),
+        strength: Math.min(5, Math.round(p.readinessScore / 20) + modifier),
+        isPulsing: modifier > 0,
       });
 
-      // Link to specific Objectives
+      // Link to Objectives
       if (viewMode === "full" || viewMode === "objectives") {
         if (p.id === "partner-01" || p.id === "partner-04") {
           links.push({
@@ -227,7 +363,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "obj-bio-digital",
             relationship: "Planetary Earth Engine & Elastic Compute",
             nature: "compute",
-            strength: 5,
+            strength: Math.min(5, 4 + modifier),
+            isPulsing: modifier > 0,
           });
         }
         if (p.id === "partner-01" || p.id === "partner-02" || p.id === "partner-03") {
@@ -236,7 +373,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "obj-sovereign-ai",
             relationship: "Frontier Multimodal & Socratic Reasoning",
             nature: "compute",
-            strength: 5,
+            strength: Math.min(5, 5 + modifier),
+            isPulsing: modifier > 0,
           });
         }
         if (p.id === "partner-06" || p.id === "partner-07" || p.id === "partner-09") {
@@ -245,7 +383,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "obj-7cap-finance",
             relationship: "Blended Concessional Tranche Syndication",
             nature: "capital",
-            strength: 5,
+            strength: Math.min(5, 4 + modifier),
+            isPulsing: modifier > 0,
           });
         }
         if (p.id === "partner-10" || p.id === "partner-07") {
@@ -254,7 +393,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "obj-grassroots-rails",
             relationship: "Digital Payments & Inclusive Ingress Rails",
             nature: "payments",
-            strength: 4,
+            strength: Math.min(5, 4 + modifier),
+            isPulsing: modifier > 0,
           });
         }
         if (p.id === "partner-05" || p.id === "partner-08" || p.id === "partner-09") {
@@ -263,14 +403,15 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "obj-living-labs",
             relationship: "Field Prototyping & Grassroots Living Labs",
             nature: "field",
-            strength: 5,
+            strength: Math.min(5, 5 + modifier),
+            isPulsing: modifier > 0,
           });
         }
       }
 
       // Link to 7 Capitals
       if (viewMode === "full" || viewMode === "capitals") {
-        if (p.category === "Frontier AI & Cloud") {
+        if (cluster === "Frontier Tech") {
           links.push({
             source: p.id,
             target: "cap-intellectual",
@@ -285,7 +426,22 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             nature: "field",
             strength: 3,
           });
-        } else if (p.category === "Multilateral & Development Finance") {
+        } else if (cluster === "African Infrastructure") {
+          links.push({
+            source: p.id,
+            target: "cap-institutional",
+            relationship: "54-State Sovereign Ingress & Currency Settlement",
+            nature: "policy",
+            strength: 5,
+          });
+          links.push({
+            source: p.id,
+            target: "cap-social",
+            relationship: "Community Pass & Youth Guilds",
+            nature: "payments",
+            strength: 4,
+          });
+        } else {
           links.push({
             source: p.id,
             target: "cap-financial",
@@ -295,39 +451,9 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
           });
           links.push({
             source: p.id,
-            target: "cap-institutional",
-            relationship: "54-State Policy Ingress Standard",
-            nature: "policy",
-            strength: 4,
-          });
-        } else if (p.category === "Philanthropic Foundations") {
-          links.push({
-            source: p.id,
             target: "cap-natural",
-            relationship: "Agroforestry & Watershed Soil Health",
+            relationship: "Planetary Watershed Restorations",
             nature: "field",
-            strength: 4,
-          });
-          links.push({
-            source: p.id,
-            target: "cap-human",
-            relationship: "Food Sovereignty & Health RCTs",
-            nature: "field",
-            strength: 4,
-          });
-        } else if (p.category === "Digital & Economic Infrastructure") {
-          links.push({
-            source: p.id,
-            target: "cap-social",
-            relationship: "Community Pass & Youth Guilds",
-            nature: "payments",
-            strength: 4,
-          });
-          links.push({
-            source: p.id,
-            target: "cap-financial",
-            relationship: "Instant Mobile Money Rails",
-            nature: "payments",
             strength: 4,
           });
         }
@@ -335,6 +461,15 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
     });
 
     return { nodes, links };
+  }, [targets, activeCluster, viewMode, pinnedNodeId, dynamicLinkModifiers]);
+
+  // Handle Pin / Unpin Node
+  const handleTogglePinNode = (nodeId: string) => {
+    if (pinnedNodeId === nodeId) {
+      setPinnedNodeId(null);
+    } else {
+      setPinnedNodeId(nodeId);
+    }
   };
 
   // D3 Rendering & Simulation
@@ -347,11 +482,22 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    svg.attr("viewBox", [0, 0, width, height]);
+    svg.attr("viewBox", `0 0 ${width} ${height}`);
 
     const { nodes, links } = generateGraphData();
 
-    // Defs for glowing filter and markers
+    // If a node is pinned, fix its coordinates to the visual center
+    nodes.forEach((n) => {
+      if (n.id === pinnedNodeId) {
+        n.fx = width / 2;
+        n.fy = height / 2;
+      } else {
+        n.fx = null;
+        n.fy = null;
+      }
+    });
+
+    // Defs for filters
     const defs = svg.append("defs");
 
     // Standard Glow filter
@@ -363,7 +509,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
 
     // Heatmap High Priority Radiant Filter
     const heatFilterHigh = defs.append("filter").attr("id", "heat-high").attr("x", "-100%").attr("y", "-100%").attr("width", "300%").attr("height", "300%");
-    heatFilterHigh.append("feGaussianBlur").attr("stdDeviation", "10").attr("result", "blur1");
+    heatFilterHigh.append("feGaussianBlur").attr("stdDeviation", "11").attr("result", "blur1");
     heatFilterHigh.append("feGaussianBlur").attr("stdDeviation", "4").attr("result", "blur2");
     const heatMergeHigh = heatFilterHigh.append("feMerge");
     heatMergeHigh.append("feMergeNode").attr("in", "blur1");
@@ -379,17 +525,17 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
 
     // Radial Gradients for Heatmap Auras
     const gradHigh = defs.append("radialGradient").attr("id", "grad-heat-high");
-    gradHigh.append("stop").attr("offset", "0%").attr("stop-color", "#10b981").attr("stop-opacity", "0.75");
+    gradHigh.append("stop").attr("offset", "0%").attr("stop-color", "#10b981").attr("stop-opacity", "0.8");
     gradHigh.append("stop").attr("offset", "60%").attr("stop-color", "#c5a059").attr("stop-opacity", "0.35");
     gradHigh.append("stop").attr("offset", "100%").attr("stop-color", "#000000").attr("stop-opacity", "0");
 
     const gradMed = defs.append("radialGradient").attr("id", "grad-heat-med");
-    gradMed.append("stop").attr("offset", "0%").attr("stop-color", "#f59e0b").attr("stop-opacity", "0.65");
+    gradMed.append("stop").attr("offset", "0%").attr("stop-color", "#f59e0b").attr("stop-opacity", "0.7");
     gradMed.append("stop").attr("offset", "65%").attr("stop-color", "#d97706").attr("stop-opacity", "0.25");
     gradMed.append("stop").attr("offset", "100%").attr("stop-color", "#000000").attr("stop-opacity", "0");
 
     const gradLow = defs.append("radialGradient").attr("id", "grad-heat-low");
-    gradLow.append("stop").attr("offset", "0%").attr("stop-color", "#38bdf8").attr("stop-opacity", "0.5");
+    gradLow.append("stop").attr("offset", "0%").attr("stop-color", "#38bdf8").attr("stop-opacity", "0.55");
     gradLow.append("stop").attr("offset", "70%").attr("stop-color", "#0284c7").attr("stop-opacity", "0.15");
     gradLow.append("stop").attr("offset", "100%").attr("stop-color", "#000000").attr("stop-opacity", "0");
 
@@ -398,7 +544,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.4, 3.5])
+      .scaleExtent([0.35, 3.5])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
       });
@@ -415,13 +561,32 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         "link",
         d3
           .forceLink<NetworkNode, NetworkLink>(links)
-          .id((d) => d.id)
-          .distance((d) => (d.nature === "governance" ? 110 : 150))
-          .strength((d) => (d.strength / 5) * 0.7)
+          .id((d: NetworkNode) => d.id)
+          .distance((d: NetworkLink) => (d.nature === "governance" ? 115 : pinnedNodeId ? 160 : 145))
+          .strength((d: NetworkLink) => (d.strength / 5) * (pinnedNodeId ? 0.9 : 0.7))
       )
-      .force("charge", d3.forceManyBody().strength(-480))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide<NetworkNode>().radius((d) => (d.radius || 20) + 20));
+      .force("charge", d3.forceManyBody().strength(pinnedNodeId ? -580 : -460))
+      .force("center", d3.forceCenter(width / 2, height / 2).strength(pinnedNodeId ? 0.3 : 1))
+      .force("collision", d3.forceCollide<NetworkNode>().radius((d: NetworkNode) => (d.radius || 20) + (pinnedNodeId ? 25 : 20)));
+
+    simulationRef.current = simulation;
+
+    // Draw Pinned Node Radial Orbit Rings
+    if (pinnedNodeId) {
+      const pinnedGroup = g.append("g").attr("class", "pinned-orbits");
+      [140, 240, 340].forEach((r, idx) => {
+        pinnedGroup
+          .append("circle")
+          .attr("cx", width / 2)
+          .attr("cy", height / 2)
+          .attr("r", r)
+          .attr("fill", "transparent")
+          .attr("stroke", "#c5a059")
+          .attr("stroke-width", 1)
+          .attr("stroke-opacity", 0.15 - idx * 0.03)
+          .attr("stroke-dasharray", "4 4");
+      });
+    }
 
     // Draw Links
     const linkGroup = g.append("g").attr("class", "links");
@@ -430,7 +595,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .selectAll<SVGLineElement, NetworkLink>("line")
       .data(links)
       .join("line")
-      .attr("stroke", (d) => {
+      .attr("stroke", (d: NetworkLink) => {
+        if (d.isPulsing) return "#10b981";
         if (isHeatmapActive) {
           if (d.nature === "capital") return "#10b981";
           if (d.nature === "compute") return "#38bdf8";
@@ -443,49 +609,59 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         if (d.nature === "policy") return "#818cf8";
         return "#c5a059";
       })
-      .attr("stroke-opacity", (d) => {
-        const sourceId = typeof d.source === "string" ? d.source : d.source.id;
-        const targetId = typeof d.target === "string" ? d.target : d.target.id;
+      .attr("stroke-opacity", (d: NetworkLink) => {
+        const sourceId = typeof d.source === "string" ? d.source : (d.source as NetworkNode).id;
+        const targetId = typeof d.target === "string" ? d.target : (d.target as NetworkNode).id;
+        if (pinnedNodeId && (sourceId === pinnedNodeId || targetId === pinnedNodeId)) {
+          return 0.95;
+        }
         if (selectedPartnerId && (sourceId === selectedPartnerId || targetId === selectedPartnerId)) {
           return 0.95;
         }
+        if (d.isPulsing) return 0.9;
         return isHeatmapActive ? 0.38 : 0.28;
       })
-      .attr("stroke-width", (d) => {
-        const sourceId = typeof d.source === "string" ? d.source : d.source.id;
-        const targetId = typeof d.target === "string" ? d.target : d.target.id;
+      .attr("stroke-width", (d: NetworkLink) => {
+        const sourceId = typeof d.source === "string" ? d.source : (d.source as NetworkNode).id;
+        const targetId = typeof d.target === "string" ? d.target : (d.target as NetworkNode).id;
+        if (pinnedNodeId && (sourceId === pinnedNodeId || targetId === pinnedNodeId)) {
+          return 3.5;
+        }
         if (selectedPartnerId && (sourceId === selectedPartnerId || targetId === selectedPartnerId)) {
           return 3.5;
         }
+        if (d.isPulsing) return 4;
         return Math.max(1, d.strength * 0.75);
       })
-      .attr("stroke-dasharray", (d) => (d.nature === "payments" || d.nature === "field" ? "4 3" : "none"));
+      .attr("stroke-dasharray", (d: NetworkLink) => (d.nature === "payments" || d.nature === "field" ? "4 3" : "none"));
 
     // Draw Nodes
     const nodeGroup = g.append("g").attr("class", "nodes");
 
     const node = nodeGroup
       .selectAll<SVGGElement, NetworkNode>("g")
-      .data(nodes, (d) => d.id)
+      .data(nodes, (d: NetworkNode) => d.id)
       .join("g")
       .attr("class", "node-element")
       .style("cursor", "pointer")
       .call(
         d3
           .drag<SVGGElement, NetworkNode>()
-          .on("start", (event, d) => {
+          .on("start", (event, d: NetworkNode) => {
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
             d.fy = d.y;
           })
-          .on("drag", (event, d) => {
+          .on("drag", (event, d: NetworkNode) => {
             d.fx = event.x;
             d.fy = event.y;
           })
-          .on("end", (event, d) => {
+          .on("end", (event, d: NetworkNode) => {
             if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
+            if (d.id !== pinnedNodeId) {
+              d.fx = null;
+              d.fy = null;
+            }
           })
       );
 
@@ -495,85 +671,128 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         .append("circle")
         .attr("class", "heat-aura")
         .attr("r", 0)
-        .attr("fill", (d) => {
-          if (d.priority === "High" || d.type === "core") return "url(#grad-heat-high)";
-          if (d.priority === "Medium") return "url(#grad-heat-med)";
+        .attr("fill", (d: any) => {
+          const n = d as NetworkNode;
+          if (n.priority === "High" || n.type === "core") return "url(#grad-heat-high)";
+          if (n.priority === "Medium") return "url(#grad-heat-med)";
           return "url(#grad-heat-low)";
         })
-        .attr("filter", (d) => (d.priority === "High" ? "url(#heat-high)" : "url(#heat-med)"))
+        .attr("filter", (d: any) => {
+          const n = d as NetworkNode;
+          return n.priority === "High" ? "url(#heat-high)" : "url(#heat-med)";
+        })
         .transition()
         .duration(800)
-        .delay((_, i) => i * 35)
+        .delay((_, i) => i * 30)
         .ease(d3.easeCubicOut)
-        .attr("r", (d) => {
-          const baseR = d.radius || 20;
-          if (d.priority === "High" || d.type === "core") return baseR * 2.5;
-          if (d.priority === "Medium") return baseR * 1.8;
+        .attr("r", (d: any) => {
+          const n = d as NetworkNode;
+          const baseR = n.radius || 20;
+          if (n.priority === "High" || n.type === "core") return baseR * 2.6;
+          if (n.priority === "Medium") return baseR * 1.85;
           return baseR * 1.35;
         });
     }
 
-    // 2. Node outer rings / halos for selected / core
+    // 2. Node outer rings / halos for selected / pinned / core
     node
       .append("circle")
       .attr("class", "outer-halo")
       .attr("r", 0)
       .attr("fill", "transparent")
-      .attr("stroke", (d) => {
-        if (isHeatmapActive && d.priority === "High") return "#10b981";
-        return d.color || "#c5a059";
+      .attr("stroke", (d: any) => {
+        const n = d as NetworkNode;
+        if (n.id === pinnedNodeId) return "#c5a059";
+        if (isHeatmapActive && n.priority === "High") return "#10b981";
+        return n.color || "#c5a059";
       })
-      .attr("stroke-width", (d) => (d.id === selectedPartnerId ? 2.5 : d.type === "core" ? 2 : 1))
-      .attr("stroke-opacity", (d) => (d.id === selectedPartnerId ? 0.95 : 0.45))
-      .attr("stroke-dasharray", (d) => (d.type === "objective" ? "3 3" : "none"))
+      .attr("stroke-width", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId ? 3.5 : n.id === selectedPartnerId ? 2.5 : n.type === "core" ? 2 : 1;
+      })
+      .attr("stroke-opacity", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId ? 1 : n.id === selectedPartnerId ? 0.95 : 0.45;
+      })
+      .attr("stroke-dasharray", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId ? "2 2" : n.type === "objective" ? "3 3" : "none";
+      })
       .transition()
       .duration(700)
-      .delay((_, i) => i * 30)
+      .delay((_, i) => i * 25)
       .ease(d3.easeElasticOut.period(0.65))
-      .attr("r", (d) => (d.radius || 20) + (d.id === selectedPartnerId || d.type === "core" ? 6 : 2));
+      .attr("r", (d: any) => {
+        const n = d as NetworkNode;
+        return (n.radius || 20) + (n.id === pinnedNodeId ? 8 : n.id === selectedPartnerId || n.type === "core" ? 6 : 2);
+      });
 
     // 3. Node body circles (with Growing Transition)
     node
       .append("circle")
       .attr("class", "node-body")
       .attr("r", 0)
-      .attr("fill", (d) => {
-        if (d.type === "core") return "#1a160d";
-        if (d.type === "objective") return "#0f172a";
-        if (d.type === "capital") return "#061814";
+      .attr("fill", (d: any) => {
+        const n = d as NetworkNode;
+        if (n.id === pinnedNodeId) return "#221c10";
+        if (n.type === "core") return "#1a160d";
+        if (n.type === "objective") return "#0f172a";
+        if (n.type === "capital") return "#061814";
         return "#121212";
       })
-      .attr("stroke", (d) => {
+      .attr("stroke", (d: any) => {
+        const n = d as NetworkNode;
+        if (n.id === pinnedNodeId) return "#c5a059";
         if (isHeatmapActive) {
-          if (d.priority === "High") return "#10b981";
-          if (d.priority === "Medium") return "#f59e0b";
+          if (n.priority === "High") return "#10b981";
+          if (n.priority === "Medium") return "#f59e0b";
           return "#38bdf8";
         }
-        return d.color || "#ffffff";
+        return n.color || "#ffffff";
       })
-      .attr("stroke-width", (d) => (d.id === selectedPartnerId ? 3 : 1.5))
-      .attr("filter", (d) => (d.id === selectedPartnerId || d.type === "core" || isHeatmapActive ? "url(#glow)" : null))
+      .attr("stroke-width", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId ? 3.5 : n.id === selectedPartnerId ? 3 : 1.5;
+      })
+      .attr("filter", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId || n.id === selectedPartnerId || n.type === "core" || isHeatmapActive ? "url(#glow)" : null;
+      })
       .transition()
       .duration(850)
-      .delay((_, i) => i * 35)
+      .delay((_, i) => i * 30)
       .ease(d3.easeElasticOut.period(0.6))
-      .attr("r", (d) => d.radius || 20);
+      .attr("r", (d: any) => {
+        const n = d as NetworkNode;
+        return n.radius || 20;
+      });
 
-    // 4. Priority badge dots on partner nodes
+    // 4. Pin indicator badge or Priority badge dots
     node
-      .filter((d) => d.type === "partner")
       .append("circle")
-      .attr("cx", (d) => (d.radius || 20) * 0.7)
-      .attr("cy", (d) => -(d.radius || 20) * 0.7)
+      .attr("cx", (d: any) => {
+        const n = d as NetworkNode;
+        return (n.radius || 20) * 0.7;
+      })
+      .attr("cy", (d: any) => {
+        const n = d as NetworkNode;
+        return -(n.radius || 20) * 0.7;
+      })
       .attr("r", 0)
-      .attr("fill", (d) => (d.priority === "High" ? "#10b981" : d.priority === "Medium" ? "#f59e0b" : "#38bdf8"))
+      .attr("fill", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId ? "#c5a059" : n.priority === "High" ? "#10b981" : n.priority === "Medium" ? "#f59e0b" : "#38bdf8";
+      })
       .attr("stroke", "#080808")
       .attr("stroke-width", 1.5)
       .transition()
       .duration(600)
-      .delay((_, i) => 250 + i * 30)
+      .delay((_, i) => 250 + i * 25)
       .ease(d3.easeBackOut)
-      .attr("r", 4.5);
+      .attr("r", (d: any) => {
+        const n = d as NetworkNode;
+        return n.id === pinnedNodeId ? 5.5 : 4.5;
+      });
 
     // 5. Node glyphs / short text in center
     node
@@ -581,23 +800,30 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
       .attr("font-family", "ui-monospace, monospace")
-      .attr("font-size", (d) => (d.type === "core" ? "11px" : d.type === "partner" ? "9px" : "8px"))
+      .attr("font-size", (d: any) => {
+        const n = d as NetworkNode;
+        return n.type === "core" ? "11px" : n.type === "partner" ? "9px" : "8px";
+      })
       .attr("font-weight", "bold")
-      .attr("fill", (d) => {
-        if (isHeatmapActive && d.priority === "High") return "#34d399";
-        return d.color || "#ffffff";
+      .attr("fill", (d: any) => {
+        const n = d as NetworkNode;
+        if (n.id === pinnedNodeId) return "#c5a059";
+        if (isHeatmapActive && n.priority === "High") return "#34d399";
+        return n.color || "#ffffff";
       })
       .attr("opacity", 0)
-      .text((d) => {
-        if (d.type === "core") return "ATLAS";
-        if (d.type === "partner" && d.partnerData) return d.partnerData.carouselPosition;
-        if (d.type === "objective") return "OBJ";
-        if (d.type === "capital") return "7CAP";
+      .text((d: any) => {
+        const n = d as NetworkNode;
+        if (n.id === pinnedNodeId) return "PIN";
+        if (n.type === "core") return "ATLAS";
+        if (n.type === "partner" && n.partnerData) return n.partnerData.carouselPosition;
+        if (n.type === "objective") return "OBJ";
+        if (n.type === "capital") return "7CAP";
         return "";
       })
       .transition()
       .duration(500)
-      .delay((_, i) => 200 + i * 25)
+      .delay((_, i) => 200 + i * 20)
       .attr("opacity", 1);
 
     // 6. Node full labels underneath
@@ -605,30 +831,49 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       node
         .append("text")
         .attr("text-anchor", "middle")
-        .attr("dy", (d) => (d.radius || 20) + 14)
+        .attr("dy", (d: any) => {
+          const n = d as NetworkNode;
+          return (n.radius || 20) + 14;
+        })
         .attr("font-family", "Georgia, serif")
-        .attr("font-size", (d) => (d.type === "core" ? "12px" : "10px"))
-        .attr("font-weight", (d) => (d.id === selectedPartnerId ? "bold" : "normal"))
-        .attr("fill", (d) => (d.id === selectedPartnerId ? "#ffffff" : "#cccccc"))
+        .attr("font-size", (d: any) => {
+          const n = d as NetworkNode;
+          return n.type === "core" ? "12px" : "10px";
+        })
+        .attr("font-weight", (d: any) => {
+          const n = d as NetworkNode;
+          return n.id === selectedPartnerId || n.id === pinnedNodeId ? "bold" : "normal";
+        })
+        .attr("fill", (d: any) => {
+          const n = d as NetworkNode;
+          return n.id === pinnedNodeId ? "#c5a059" : n.id === selectedPartnerId ? "#ffffff" : "#cccccc";
+        })
         .attr("fill-opacity", 0)
-        .text((d) => d.label)
+        .text((d: any) => {
+          const n = d as NetworkNode;
+          return n.label;
+        })
         .transition()
         .duration(600)
-        .delay((_, i) => 300 + i * 25)
+        .delay((_, i) => 300 + i * 20)
         .attr("fill-opacity", 0.9);
     }
 
     // Node Interaction Events
     node
-      .on("mouseenter", (event, d) => {
+      .on("mouseenter", (event, d: NetworkNode) => {
         setHoveredNode(d);
         d3.select(event.currentTarget).select("circle.node-body").attr("stroke-width", 3.5);
       })
-      .on("mouseleave", (event, d) => {
+      .on("mouseleave", (event, d: NetworkNode) => {
         setHoveredNode(null);
-        d3.select(event.currentTarget).select("circle.node-body").attr("stroke-width", d.id === selectedPartnerId ? 3 : 1.5);
+        d3.select(event.currentTarget)
+          .select("circle.node-body")
+          .attr("stroke-width", d.id === pinnedNodeId ? 3.5 : d.id === selectedPartnerId ? 3 : 1.5);
       })
-      .on("click", (event, d) => {
+      .on("click", (event, d: NetworkNode) => {
+        // Toggle pin on node click or select partner
+        handleTogglePinNode(d.id);
         if (d.partnerData && onSelectPartner) {
           onSelectPartner(d.partnerData);
         }
@@ -637,18 +882,27 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
     // Simulation Tick Update
     simulation.on("tick", () => {
       link
-        .attr("x1", (d) => (typeof d.source === "object" ? (d.source as NetworkNode).x || 0 : 0))
-        .attr("y1", (d) => (typeof d.source === "object" ? (d.source as NetworkNode).y || 0 : 0))
-        .attr("x2", (d) => (typeof d.target === "object" ? (d.target as NetworkNode).x || 0 : 0))
-        .attr("y2", (d) => (typeof d.target === "object" ? (d.target as NetworkNode).y || 0 : 0));
+        .attr("x1", (d: any) => (typeof d.source === "object" ? (d.source as NetworkNode).x || 0 : 0))
+        .attr("y1", (d: any) => (typeof d.source === "object" ? (d.source as NetworkNode).y || 0 : 0))
+        .attr("x2", (d: any) => (typeof d.target === "object" ? (d.target as NetworkNode).x || 0 : 0))
+        .attr("y2", (d: any) => (typeof d.target === "object" ? (d.target as NetworkNode).y || 0 : 0));
 
-      node.attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`);
+      node.attr("transform", (d: any) => `translate(${(d as NetworkNode).x || 0},${(d as NetworkNode).y || 0})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [targets, selectedPartnerId, activeFilter, viewMode, showLabels, isFullscreen, isHeatmapActive, simulationIteration, filterTriggerKey]);
+  }, [
+    generateGraphData,
+    selectedPartnerId,
+    pinnedNodeId,
+    showLabels,
+    isFullscreen,
+    isHeatmapActive,
+    simulationIteration,
+    filterTriggerKey,
+  ]);
 
   const handleResetZoom = () => {
     if (!svgRef.current) return;
@@ -663,9 +917,16 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
     setSimulationIteration((prev) => prev + 1);
   };
 
+  const STRATEGIC_CLUSTERS: { id: StrategicClusterType; label: string; count: number; color: string }[] = [
+    { id: "ALL", label: "All Clusters", count: targets.length, color: "text-white" },
+    { id: "Frontier Tech", label: "Frontier Tech", count: 4, color: "text-sky-400" },
+    { id: "Global Development", label: "Global Development", count: 4, color: "text-emerald-400" },
+    { id: "African Infrastructure", label: "African Infrastructure", count: 2, color: "text-rose-400" },
+  ];
+
   return (
     <motion.div
-      key={`graph-motion-${filterTriggerKey}-${simulationIteration}`}
+      key={`graph-motion-${filterTriggerKey}-${simulationIteration}-${activeCluster}`}
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
@@ -686,12 +947,24 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
                 <span>HEATMAP ACTIVE</span>
               </span>
             )}
+            {pinnedNodeId && (
+              <span className="px-2 py-0.5 bg-[#c5a059]/20 text-[#c5a059] border border-[#c5a059]/60 font-bold flex items-center space-x-1">
+                <Pin className="w-3 h-3 text-[#c5a059]" />
+                <span>PINNED: {pinnedNodeId.toUpperCase()}</span>
+              </span>
+            )}
+            {isAutoUpdatingLinks && (
+              <span className="px-2 py-0.5 bg-sky-950 text-sky-300 border border-sky-600 font-bold flex items-center space-x-1 animate-pulse">
+                <Radio className="w-3 h-3 text-sky-400" />
+                <span>SCENARIO ENGINE LINK SYNC</span>
+              </span>
+            )}
           </div>
           <h3 className="font-serif text-lg sm:text-xl text-white font-light">
             Interactive Institutional & 7-Capitals Graph Topology
           </h3>
           <p className="text-xs text-white/50 font-sans">
-            Mapping neural compute, concessional finance tranches, and field living labs between the active targets and Atlas Sanctum directives.
+            Mapping neural compute, concessional finance tranches, and field living labs. Click any node to pin it in the center and rearrange orbital relationships.
           </p>
         </div>
 
@@ -725,6 +998,25 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             </button>
           </div>
 
+          {/* Auto-Update Scenario Links Toggle */}
+          <button
+            id="btn-auto-update-links"
+            onClick={() => setIsAutoUpdatingLinks(!isAutoUpdatingLinks)}
+            className={`px-3 py-1.5 border text-[10px] uppercase tracking-wider transition-all flex items-center space-x-1.5 ${
+              isAutoUpdatingLinks
+                ? "bg-sky-950/90 border-sky-500 text-sky-300 font-bold shadow-lg shadow-sky-950/50"
+                : "bg-[#101010] hover:bg-[#181818] border-white/10 text-white/60 hover:text-white"
+            }`}
+            title="Periodically adjust edge weights from simulated Scenario Engine events"
+          >
+            {isAutoUpdatingLinks ? (
+              <Pause className="w-3.5 h-3.5 text-sky-400" />
+            ) : (
+              <Play className="w-3.5 h-3.5 text-white/40" />
+            )}
+            <span>Auto-Update Links: {isAutoUpdatingLinks ? "ON" : "OFF"}</span>
+          </button>
+
           {/* Toggle Impact Heatmap Button */}
           <button
             id="btn-toggle-impact-heatmap"
@@ -738,6 +1030,18 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             <Flame className={`w-3.5 h-3.5 ${isHeatmapActive ? "text-emerald-400 animate-pulse" : "text-white/40"}`} />
             <span>Heatmap: {isHeatmapActive ? "ON" : "OFF"}</span>
           </button>
+
+          {/* Pin/Unpin Node Control */}
+          {pinnedNodeId && (
+            <button
+              onClick={() => setPinnedNodeId(null)}
+              className="px-2.5 py-1.5 bg-[#1a150b] border border-[#c5a059] text-[#c5a059] text-[10px] uppercase tracking-wider font-bold flex items-center space-x-1"
+              title="Unlock pinned node and restore free simulation"
+            >
+              <PinOff className="w-3.5 h-3.5" />
+              <span>Unpin Center</span>
+            </button>
+          )}
 
           {/* Label Toggle */}
           <button
@@ -778,6 +1082,57 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         </div>
       </div>
 
+      {/* Strategic Clusters Explorer Tab Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0d0d0d] p-2.5 border border-white/10">
+        <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-wider text-white/60">
+          <Boxes className="w-3.5 h-3.5 text-[#c5a059]" />
+          <span>Strategic Clusters Exploration:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {STRATEGIC_CLUSTERS.map((cl) => {
+            const isSelected = activeCluster === cl.id;
+            return (
+              <button
+                key={cl.id}
+                onClick={() => handleClusterChange(cl.id)}
+                className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider border transition-all flex items-center space-x-1.5 ${
+                  isSelected
+                    ? "bg-[#181818] border-[#c5a059] text-[#c5a059] font-bold shadow-sm"
+                    : "bg-[#121212] border-white/5 text-white/50 hover:text-white hover:border-white/20"
+                }`}
+              >
+                <span>{cl.label}</span>
+                <span className="text-[9px] px-1 bg-black/60 border border-white/10 text-white/40 font-bold">
+                  {cl.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Scenario Engine Dynamic Event Ticker (when Auto-Update is active) */}
+      <AnimatePresence>
+        {isAutoUpdatingLinks && activeScenarioPulse && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="p-2.5 bg-sky-950/60 border border-sky-500/80 text-sky-200 text-xs font-mono flex items-center justify-between shadow-lg"
+          >
+            <div className="flex items-center space-x-2">
+              <Activity className="w-4 h-4 text-sky-400 animate-spin" />
+              <span className="font-bold text-white">Scenario Engine Pulse:</span>
+              <span className="text-sky-300">{activeScenarioPulse}</span>
+            </div>
+            <span className="text-[10px] text-sky-400/80 uppercase tracking-widest animate-pulse">
+              Re-weighting active network edges
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Graph Visual Canvas */}
       <div className="relative border border-white/10 bg-[#040404] overflow-hidden">
         <svg
@@ -806,6 +1161,11 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
               )}
             </div>
             <p className="font-serif text-sm text-white font-medium">{hoveredNode.label}</p>
+            {hoveredNode.cluster && (
+              <p className="text-[10px] text-[#c5a059] font-mono">
+                Cluster: {hoveredNode.cluster}
+              </p>
+            )}
             {hoveredNode.partnerData && (
               <p className="text-[11px] text-white/70 font-sans line-clamp-2">
                 {hoveredNode.partnerData.strategicRole}
@@ -818,7 +1178,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
               </div>
             )}
             <div className="text-[9px] text-[#c5a059] font-mono italic">
-              Click node to spotlight in carousel & report card
+              {hoveredNode.id === pinnedNodeId ? "Click to unpin node from center" : "Click to pin in center & reorganize orbits"}
             </div>
           </div>
         )}
@@ -826,18 +1186,18 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         {/* Floating Quick Legend */}
         <div className="absolute top-3 right-3 p-3 bg-[#080808]/90 border border-white/10 backdrop-blur-sm text-[10px] font-mono space-y-1.5 hidden md:block pointer-events-none">
           <div className="text-white/40 uppercase tracking-wider text-[9px] font-bold">
-            {isHeatmapActive ? "Impact Heatmap Aura Intensity" : "Topology Legend"}
+            {isHeatmapActive ? "Impact Heatmap Intensity" : "Topology Legend"}
           </div>
 
           {isHeatmapActive ? (
             <>
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse"></span>
-                <span className="text-emerald-300 font-bold">High Priority (Radial Aura x2.5)</span>
+                <span className="text-emerald-300 font-bold">High Priority (Radial Aura x2.6)</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span className="text-amber-300 font-bold">Medium Priority (Warm Halo x1.8)</span>
+                <span className="text-amber-300 font-bold">Medium Priority (Halo x1.85)</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2 h-2 rounded-full bg-sky-400"></span>
@@ -852,21 +1212,24 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#38bdf8]"></span>
-                <span className="text-white/80">Frontier AI / Compute</span>
+                <span className="text-white/80">Frontier Tech Cluster</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span>
-                <span className="text-white/80">Development Finance</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24]"></span>
-                <span className="text-white/80">Foundations / Grants</span>
+                <span className="text-white/80">Global Development Cluster</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899]"></span>
-                <span className="text-white/80">Payment / Ingress Rails</span>
+                <span className="text-white/80">African Infrastructure</span>
               </div>
             </>
+          )}
+
+          {pinnedNodeId && (
+            <div className="pt-1.5 border-t border-white/10 text-[#c5a059] flex items-center space-x-1.5">
+              <Pin className="w-3 h-3" />
+              <span>Center Orbit Locked</span>
+            </div>
           )}
         </div>
       </div>
@@ -874,16 +1237,16 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       {/* Sub-Legend & Interaction Guide */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-[11px] font-mono text-white/60">
         <div className="p-2.5 bg-[#0c0c0c] border border-white/5 flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-          <span>Solid Line: Active Sovereign / Technical Ingress</span>
+          <Pin className="w-3.5 h-3.5 text-[#c5a059]" />
+          <span>Node Pinning: Click to center & orbit relationships</span>
         </div>
         <div className="p-2.5 bg-[#0c0c0c] border border-white/5 flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-          <span>Dashed Line: Decentralized Protocol & Field Trials</span>
+          <Activity className="w-3.5 h-3.5 text-sky-400" />
+          <span>Scenario Engine: Live auto-updating edge weights</span>
         </div>
         <div className="p-2.5 bg-[#0c0c0c] border border-white/5 flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-[#c5a059]"></div>
-          <span>Node Size: 7-Capitals Alignment Readiness Score</span>
+          <Boxes className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Strategic Clusters: Focused sector isolate views</span>
         </div>
       </div>
     </motion.div>

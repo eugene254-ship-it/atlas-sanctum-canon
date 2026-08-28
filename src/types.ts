@@ -51,6 +51,7 @@ export interface PartnershipTarget {
   organization: string;
   strategicRole: string;
   strategicPriority?: "High" | "Medium" | "Low";
+  strategicCluster?: "Frontier Tech" | "Global Development" | "African Infrastructure";
   category: "Frontier AI & Cloud" | "Multilateral & Development Finance" | "Philanthropic Foundations" | "Digital & Economic Infrastructure";
   pillarAlignment: number[]; // Canon Pillar IDs
   focusAreas: string[];

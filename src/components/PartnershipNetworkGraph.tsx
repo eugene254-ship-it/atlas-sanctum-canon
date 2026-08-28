@@ -24,7 +24,13 @@ import {
   Activity,
   Boxes,
   Compass,
-  Radio
+  Radio,
+  History,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
+  HelpCircle
 } from "lucide-react";
 
 export interface NetworkNode extends d3.SimulationNodeDatum {
@@ -39,6 +45,9 @@ export interface NetworkNode extends d3.SimulationNodeDatum {
   radius?: number;
   partnerData?: PartnershipTarget;
   isPinned?: boolean;
+  onboardingYear?: number;
+  isPendingReview?: boolean;
+  isChronologicallyActive?: boolean;
 }
 
 export interface NetworkLink extends d3.SimulationLinkDatum<NetworkNode> {
@@ -49,6 +58,7 @@ export interface NetworkLink extends d3.SimulationLinkDatum<NetworkNode> {
   strength: number; // 1 to 5
   lastUpdatedScenario?: string;
   isPulsing?: boolean;
+  isPending?: boolean;
 }
 
 export type StrategicClusterType = "ALL" | "Frontier Tech" | "Global Development" | "African Infrastructure";
@@ -63,6 +73,58 @@ interface PartnershipNetworkGraphProps {
   selectedCluster?: StrategicClusterType;
   onSelectCluster?: (cluster: StrategicClusterType) => void;
 }
+
+export interface TimelineMilestone {
+  year: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  keyAnchors: string[];
+  activePartnersCount?: number;
+}
+
+export const TIMELINE_MILESTONES: TimelineMilestone[] = [
+  {
+    year: 2022,
+    title: "Genesis & Anchor Institutions",
+    subtitle: "Multilateral & Planetary Foundation",
+    description: "Codification of 7-Capitals charter, onboarding Google Cloud, UNDP, and African Development Bank.",
+    keyAnchors: ["Google Cloud", "UNDP", "African Development Bank"],
+    activePartnersCount: 3,
+  },
+  {
+    year: 2023,
+    title: "Planetary Compute & Sovereign Debt",
+    subtitle: "Cloud Ingress & Concessional Tranches",
+    description: "Integration of AWS planetary data archives, Microsoft Azure government stacks, and World Bank debt facilities.",
+    keyAnchors: ["Microsoft", "AWS", "World Bank"],
+    activePartnersCount: 6,
+  },
+  {
+    year: 2024,
+    title: "Frontier Socratic AI & Financial Inclusion",
+    subtitle: "Multi-Agent Deliberation & Grassroots Rails",
+    description: "OpenAI multi-agent reasoning, Gates Foundation agroforestry pilots, and Mastercard Community Pass payments.",
+    keyAnchors: ["OpenAI", "Gates Foundation", "Mastercard"],
+    activePartnersCount: 9,
+  },
+  {
+    year: 2025,
+    title: "Living Labs & Regenerative Scaling",
+    subtitle: "Planetary Sponge Cities & Full Capital Mesh",
+    description: "Rockefeller Foundation resilience grids, 50,000 edge IoT soil checkpoints, and cross-capital syndication.",
+    keyAnchors: ["Rockefeller Foundation", "All 10 Core Anchors"],
+    activePartnersCount: 10,
+  },
+  {
+    year: 2026,
+    title: "Sovereign Agent Swarms & Autonomous Discovery",
+    subtitle: "Present Frontier & Emerging Horizons",
+    description: "Autonomous topology discovery scan, Constitutional AI safety harnesses, and continental trade corridors.",
+    keyAnchors: ["Full Mesh", "Discovered Candidates (Pending Review)"],
+    activePartnersCount: 13,
+  },
+];
 
 const CORE_OBJECTIVES = [
   {
@@ -180,6 +242,11 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
   // Node Pinning State
   const [pinnedNodeId, setPinnedNodeId] = useState<string | null>(null);
 
+  // Chronological View State & Timeline Simulation
+  const [isChronologicalView, setIsChronologicalView] = useState<boolean>(false);
+  const [chronologicalYear, setChronologicalYear] = useState<number>(2026);
+  const [isPlayingTimeline, setIsPlayingTimeline] = useState<boolean>(false);
+
   // Auto-Update Scenario Link Simulation
   const [isAutoUpdatingLinks, setIsAutoUpdatingLinks] = useState<boolean>(false);
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState<number>(0);
@@ -195,6 +262,27 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
   useEffect(() => {
     setLocalHeatmap(impactHeatmapEnabled);
   }, [impactHeatmapEnabled]);
+
+  // Chronological Evolution Playback Loop
+  useEffect(() => {
+    if (!isPlayingTimeline || !isChronologicalView) return;
+
+    const interval = setInterval(() => {
+      setChronologicalYear((prev) => {
+        if (prev >= 2026) {
+          return 2022;
+        }
+        return prev + 1;
+      });
+
+      // Re-heat physics gently on year step
+      if (simulationRef.current) {
+        simulationRef.current.alpha(0.2).restart();
+      }
+    }, 2400);
+
+    return () => clearInterval(interval);
+  }, [isPlayingTimeline, isChronologicalView]);
 
   const handleClusterChange = (cluster: StrategicClusterType) => {
     setActiveCluster(cluster);
@@ -252,12 +340,22 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
     return "Global Development";
   };
 
-  // Build Graph Nodes & Links with Cluster and Pinning support
+  // Helper to get historical onboarding year for partner
+  const getPartnerOnboardingYear = (p: PartnershipTarget): number => {
+    if (p.onboardingYear) return p.onboardingYear;
+    if (p.id === "partner-01" || p.id === "partner-05" || p.id === "partner-07") return 2022;
+    if (p.id === "partner-03" || p.id === "partner-04" || p.id === "partner-06") return 2023;
+    if (p.id === "partner-02" || p.id === "partner-08" || p.id === "partner-10") return 2024;
+    if (p.id === "partner-09") return 2025;
+    return 2026;
+  };
+
+  // Build Graph Nodes & Links with Cluster, Chronological Year, and Pinning support
   const generateGraphData = useCallback(() => {
     const nodes: NetworkNode[] = [];
     const links: NetworkLink[] = [];
 
-    // 1. Central Core Node
+    // 1. Central Core Node (Always active from 2022)
     nodes.push({
       id: "atlas-core",
       label: "Atlas Sanctum Core",
@@ -266,6 +364,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       priority: "High",
       radius: 28,
       isPinned: pinnedNodeId === "atlas-core",
+      onboardingYear: 2022,
+      isChronologicallyActive: true,
     });
 
     // 2. Objective Nodes
@@ -279,6 +379,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
           priority: "High",
           radius: 18,
           isPinned: pinnedNodeId === obj.id,
+          onboardingYear: 2022,
+          isChronologicallyActive: true,
         });
 
         links.push({
@@ -302,6 +404,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
           priority: "High",
           radius: 16,
           isPinned: pinnedNodeId === `cap-${cap.type.toLowerCase()}`,
+          onboardingYear: 2022,
+          isChronologicallyActive: true,
         });
 
         links.push({
@@ -321,9 +425,15 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         return;
       }
 
+      const onboardingYear = getPartnerOnboardingYear(p);
+      const isChronologicallyActive = !isChronologicalView || onboardingYear <= chronologicalYear;
+      const isPendingReview = p.reviewStatus === "Pending Review";
+
       const priority = p.strategicPriority || (p.readinessScore >= 92 ? "High" : p.readinessScore >= 88 ? "Medium" : "Low");
       const partnerColor =
-        cluster === "Frontier Tech"
+        isPendingReview
+          ? "#f59e0b"
+          : cluster === "Frontier Tech"
           ? "#38bdf8"
           : cluster === "African Infrastructure"
           ? "#ec4899"
@@ -341,70 +451,93 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         radius: 20 + (p.readinessScore - 80) * 0.4,
         partnerData: p,
         isPinned: pinnedNodeId === p.id,
+        onboardingYear: onboardingYear,
+        isPendingReview: isPendingReview,
+        isChronologicallyActive: isChronologicallyActive,
       });
 
       const modifier = dynamicLinkModifiers[p.id] || 0;
+      
+      // Calculate historical strength in Chronological Mode
+      let computedStrength = Math.min(5, Math.round(p.readinessScore / 20) + modifier);
+      if (isChronologicalView) {
+        if (!isChronologicallyActive) {
+          computedStrength = 1;
+        } else {
+          // Link strength matures over historical tenure
+          const tenureYears = chronologicalYear - onboardingYear;
+          computedStrength = Math.min(5, Math.max(2, 2 + tenureYears));
+        }
+      }
 
       // Link to Core
       links.push({
         source: "atlas-core",
         target: p.id,
-        relationship: `Bilateral Alliance (${p.category})`,
+        relationship: isPendingReview
+          ? `Prospective Alliance (Discovery Pending)`
+          : `Bilateral Alliance (${p.category})`,
         nature: p.category.includes("AI") ? "compute" : p.category.includes("Finance") ? "capital" : "policy",
-        strength: Math.min(5, Math.round(p.readinessScore / 20) + modifier),
-        isPulsing: modifier > 0,
+        strength: computedStrength,
+        isPulsing: modifier > 0 || isPendingReview,
+        isPending: isPendingReview,
       });
 
       // Link to Objectives
       if (viewMode === "full" || viewMode === "objectives") {
-        if (p.id === "partner-01" || p.id === "partner-04") {
+        if (p.id === "partner-01" || p.id === "partner-04" || p.id === "partner-disc-03") {
           links.push({
             source: p.id,
             target: "obj-bio-digital",
             relationship: "Planetary Earth Engine & Elastic Compute",
             nature: "compute",
-            strength: Math.min(5, 4 + modifier),
-            isPulsing: modifier > 0,
+            strength: Math.min(5, computedStrength + modifier),
+            isPulsing: modifier > 0 || isPendingReview,
+            isPending: isPendingReview,
           });
         }
-        if (p.id === "partner-01" || p.id === "partner-02" || p.id === "partner-03") {
+        if (p.id === "partner-01" || p.id === "partner-02" || p.id === "partner-03" || p.id === "partner-disc-01") {
           links.push({
             source: p.id,
             target: "obj-sovereign-ai",
             relationship: "Frontier Multimodal & Socratic Reasoning",
             nature: "compute",
-            strength: Math.min(5, 5 + modifier),
-            isPulsing: modifier > 0,
+            strength: Math.min(5, computedStrength + 1 + modifier),
+            isPulsing: modifier > 0 || isPendingReview,
+            isPending: isPendingReview,
           });
         }
-        if (p.id === "partner-06" || p.id === "partner-07" || p.id === "partner-09") {
+        if (p.id === "partner-06" || p.id === "partner-07" || p.id === "partner-09" || p.id === "partner-disc-04") {
           links.push({
             source: p.id,
             target: "obj-7cap-finance",
             relationship: "Blended Concessional Tranche Syndication",
             nature: "capital",
-            strength: Math.min(5, 4 + modifier),
-            isPulsing: modifier > 0,
+            strength: Math.min(5, computedStrength + modifier),
+            isPulsing: modifier > 0 || isPendingReview,
+            isPending: isPendingReview,
           });
         }
-        if (p.id === "partner-10" || p.id === "partner-07") {
+        if (p.id === "partner-10" || p.id === "partner-07" || p.id === "partner-disc-02") {
           links.push({
             source: p.id,
             target: "obj-grassroots-rails",
             relationship: "Digital Payments & Inclusive Ingress Rails",
             nature: "payments",
-            strength: Math.min(5, 4 + modifier),
-            isPulsing: modifier > 0,
+            strength: Math.min(5, computedStrength + modifier),
+            isPulsing: modifier > 0 || isPendingReview,
+            isPending: isPendingReview,
           });
         }
-        if (p.id === "partner-05" || p.id === "partner-08" || p.id === "partner-09") {
+        if (p.id === "partner-05" || p.id === "partner-08" || p.id === "partner-09" || p.id === "partner-disc-02") {
           links.push({
             source: p.id,
             target: "obj-living-labs",
             relationship: "Field Prototyping & Grassroots Living Labs",
             nature: "field",
-            strength: Math.min(5, 5 + modifier),
-            isPulsing: modifier > 0,
+            strength: Math.min(5, computedStrength + 1 + modifier),
+            isPulsing: modifier > 0 || isPendingReview,
+            isPending: isPendingReview,
           });
         }
       }
@@ -417,14 +550,16 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "cap-intellectual",
             relationship: "Neural Compute & AI Models",
             nature: "compute",
-            strength: 4,
+            strength: Math.min(5, computedStrength),
+            isPending: isPendingReview,
           });
           links.push({
             source: p.id,
             target: "cap-physical",
             relationship: "Edge Data Centers & Sensor Clusters",
             nature: "field",
-            strength: 3,
+            strength: Math.min(5, Math.max(1, computedStrength - 1)),
+            isPending: isPendingReview,
           });
         } else if (cluster === "African Infrastructure") {
           links.push({
@@ -432,14 +567,16 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "cap-institutional",
             relationship: "54-State Sovereign Ingress & Currency Settlement",
             nature: "policy",
-            strength: 5,
+            strength: Math.min(5, computedStrength),
+            isPending: isPendingReview,
           });
           links.push({
             source: p.id,
             target: "cap-social",
             relationship: "Community Pass & Youth Guilds",
             nature: "payments",
-            strength: 4,
+            strength: Math.min(5, computedStrength),
+            isPending: isPendingReview,
           });
         } else {
           links.push({
@@ -447,21 +584,31 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             target: "cap-financial",
             relationship: "Concessional Tranches & Sovereign De-Risking",
             nature: "capital",
-            strength: 5,
+            strength: Math.min(5, computedStrength),
+            isPending: isPendingReview,
           });
           links.push({
             source: p.id,
             target: "cap-natural",
-            relationship: "Planetary Watershed Restorations",
+            relationship: "Landscape Restorations & Water Basins",
             nature: "field",
-            strength: 4,
+            strength: Math.min(5, computedStrength),
+            isPending: isPendingReview,
           });
         }
       }
     });
 
     return { nodes, links };
-  }, [targets, activeCluster, viewMode, pinnedNodeId, dynamicLinkModifiers]);
+  }, [
+    targets,
+    activeCluster,
+    viewMode,
+    pinnedNodeId,
+    dynamicLinkModifiers,
+    isChronologicalView,
+    chronologicalYear,
+  ]);
 
   // Handle Pin / Unpin Node
   const handleTogglePinNode = (nodeId: string) => {
@@ -694,7 +841,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         });
     }
 
-    // 2. Node outer rings / halos for selected / pinned / core
+    // 2. Node outer rings / halos for selected / pinned / core / pending review
     node
       .append("circle")
       .attr("class", "outer-halo")
@@ -702,20 +849,26 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .attr("fill", "transparent")
       .attr("stroke", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isPendingReview) return "#f59e0b";
         if (n.id === pinnedNodeId) return "#c5a059";
         if (isHeatmapActive && n.priority === "High") return "#10b981";
         return n.color || "#c5a059";
       })
       .attr("stroke-width", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isPendingReview) return 2.5;
         return n.id === pinnedNodeId ? 3.5 : n.id === selectedPartnerId ? 2.5 : n.type === "core" ? 2 : 1;
       })
       .attr("stroke-opacity", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isChronologicallyActive === false) return 0.12;
+        if (n.isPendingReview) return 0.9;
         return n.id === pinnedNodeId ? 1 : n.id === selectedPartnerId ? 0.95 : 0.45;
       })
       .attr("stroke-dasharray", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isPendingReview) return "3 2";
+        if (n.isChronologicallyActive === false) return "2 4";
         return n.id === pinnedNodeId ? "2 2" : n.type === "objective" ? "3 3" : "none";
       })
       .transition()
@@ -724,16 +877,18 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .ease(d3.easeElasticOut.period(0.65))
       .attr("r", (d: any) => {
         const n = d as NetworkNode;
-        return (n.radius || 20) + (n.id === pinnedNodeId ? 8 : n.id === selectedPartnerId || n.type === "core" ? 6 : 2);
+        return (n.radius || 20) + (n.id === pinnedNodeId ? 8 : n.id === selectedPartnerId || n.type === "core" ? 6 : n.isPendingReview ? 5 : 2);
       });
 
-    // 3. Node body circles (with Growing Transition)
+    // 3. Node body circles (with Growing Transition & Chronological Dimming)
     node
       .append("circle")
       .attr("class", "node-body")
       .attr("r", 0)
       .attr("fill", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isChronologicallyActive === false) return "#070707";
+        if (n.isPendingReview) return "#1c1404";
         if (n.id === pinnedNodeId) return "#221c10";
         if (n.type === "core") return "#1a160d";
         if (n.type === "objective") return "#0f172a";
@@ -742,6 +897,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       })
       .attr("stroke", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isChronologicallyActive === false) return "#333333";
+        if (n.isPendingReview) return "#f59e0b";
         if (n.id === pinnedNodeId) return "#c5a059";
         if (isHeatmapActive) {
           if (n.priority === "High") return "#10b981";
@@ -752,11 +909,17 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       })
       .attr("stroke-width", (d: any) => {
         const n = d as NetworkNode;
-        return n.id === pinnedNodeId ? 3.5 : n.id === selectedPartnerId ? 3 : 1.5;
+        if (n.isChronologicallyActive === false) return 0.8;
+        return n.id === pinnedNodeId ? 3.5 : n.id === selectedPartnerId ? 3 : n.isPendingReview ? 2.5 : 1.5;
+      })
+      .attr("opacity", (d: any) => {
+        const n = d as NetworkNode;
+        return n.isChronologicallyActive === false ? 0.22 : 1;
       })
       .attr("filter", (d: any) => {
         const n = d as NetworkNode;
-        return n.id === pinnedNodeId || n.id === selectedPartnerId || n.type === "core" || isHeatmapActive ? "url(#glow)" : null;
+        if (n.isChronologicallyActive === false) return null;
+        return n.id === pinnedNodeId || n.id === selectedPartnerId || n.type === "core" || n.isPendingReview || isHeatmapActive ? "url(#glow)" : null;
       })
       .transition()
       .duration(850)
@@ -781,10 +944,15 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .attr("r", 0)
       .attr("fill", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isPendingReview) return "#f59e0b";
         return n.id === pinnedNodeId ? "#c5a059" : n.priority === "High" ? "#10b981" : n.priority === "Medium" ? "#f59e0b" : "#38bdf8";
       })
       .attr("stroke", "#080808")
       .attr("stroke-width", 1.5)
+      .attr("opacity", (d: any) => {
+        const n = d as NetworkNode;
+        return n.isChronologicallyActive === false ? 0.2 : 1;
+      })
       .transition()
       .duration(600)
       .delay((_, i) => 250 + i * 25)
@@ -807,6 +975,8 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .attr("font-weight", "bold")
       .attr("fill", (d: any) => {
         const n = d as NetworkNode;
+        if (n.isChronologicallyActive === false) return "#666666";
+        if (n.isPendingReview) return "#fbbf24";
         if (n.id === pinnedNodeId) return "#c5a059";
         if (isHeatmapActive && n.priority === "High") return "#34d399";
         return n.color || "#ffffff";
@@ -814,6 +984,7 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .attr("opacity", 0)
       .text((d: any) => {
         const n = d as NetworkNode;
+        if (n.isPendingReview) return "NEW";
         if (n.id === pinnedNodeId) return "PIN";
         if (n.type === "core") return "ATLAS";
         if (n.type === "partner" && n.partnerData) return n.partnerData.carouselPosition;
@@ -824,7 +995,10 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
       .transition()
       .duration(500)
       .delay((_, i) => 200 + i * 20)
-      .attr("opacity", 1);
+      .attr("opacity", (d: any) => {
+        const n = d as NetworkNode;
+        return n.isChronologicallyActive === false ? 0.3 : 1;
+      });
 
     // 6. Node full labels underneath
     if (showLabels) {
@@ -846,17 +1020,22 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
         })
         .attr("fill", (d: any) => {
           const n = d as NetworkNode;
+          if (n.isChronologicallyActive === false) return "#555555";
+          if (n.isPendingReview) return "#f59e0b";
           return n.id === pinnedNodeId ? "#c5a059" : n.id === selectedPartnerId ? "#ffffff" : "#cccccc";
         })
         .attr("fill-opacity", 0)
         .text((d: any) => {
           const n = d as NetworkNode;
-          return n.label;
+          return n.label + (n.isPendingReview ? " (Discovery)" : "");
         })
         .transition()
         .duration(600)
         .delay((_, i) => 300 + i * 20)
-        .attr("fill-opacity", 0.9);
+        .attr("fill-opacity", (d: any) => {
+          const n = d as NetworkNode;
+          return n.isChronologicallyActive === false ? 0.3 : 0.9;
+        });
     }
 
     // Node Interaction Events
@@ -998,6 +1177,21 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
             </button>
           </div>
 
+          {/* Chronological View Toggle */}
+          <button
+            id="btn-toggle-chronological-view"
+            onClick={() => setIsChronologicalView(!isChronologicalView)}
+            className={`px-3 py-1.5 border text-[10px] uppercase tracking-wider transition-all flex items-center space-x-1.5 ${
+              isChronologicalView
+                ? "bg-amber-950/90 border-[#c5a059] text-[#c5a059] font-bold shadow-lg shadow-amber-950/50"
+                : "bg-[#101010] hover:bg-[#181818] border-white/10 text-white/60 hover:text-white"
+            }`}
+            title="Toggle historical evolution timeline of partnership ecosystem"
+          >
+            <Clock className={`w-3.5 h-3.5 ${isChronologicalView ? "text-[#c5a059] animate-spin" : "text-white/40"}`} />
+            <span>Timeline: {isChronologicalView ? "ACTIVE" : "ALL TIME"}</span>
+          </button>
+
           {/* Auto-Update Scenario Links Toggle */}
           <button
             id="btn-auto-update-links"
@@ -1111,6 +1305,77 @@ export const PartnershipNetworkGraph: React.FC<PartnershipNetworkGraphProps> = (
           })}
         </div>
       </div>
+
+      {/* Chronological Evolution Timeline Bar (when Timeline view is active) */}
+      <AnimatePresence>
+        {isChronologicalView && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="p-3 bg-gradient-to-r from-[#141008] via-[#0f0e0b] to-[#141008] border border-[#c5a059]/40 space-y-2.5 shadow-xl"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center space-x-2.5 text-xs font-mono">
+                <Clock className="w-4 h-4 text-[#c5a059]" />
+                <span className="text-white font-bold tracking-wider">CHRONOLOGICAL ECOSYSTEM EVOLUTION:</span>
+                <span className="px-2 py-0.5 bg-[#c5a059] text-black font-extrabold text-xs tracking-widest rounded-sm">
+                  {chronologicalYear}
+                </span>
+                <span className="text-white/50 text-[11px]">
+                  {TIMELINE_MILESTONES.find((m) => m.year === chronologicalYear)?.title || "Ecosystem Maturity"}
+                </span>
+              </div>
+
+              {/* Play / Step controls */}
+              <div className="flex items-center space-x-2">
+                <button
+                  id="btn-timeline-play"
+                  onClick={() => setIsPlayingTimeline(!isPlayingTimeline)}
+                  className={`px-3 py-1 text-[10px] font-mono uppercase tracking-wider border flex items-center space-x-1.5 transition-all ${
+                    isPlayingTimeline
+                      ? "bg-[#c5a059] text-black font-bold border-[#c5a059]"
+                      : "bg-[#181818] hover:bg-[#222222] border-white/20 text-white"
+                  }`}
+                >
+                  {isPlayingTimeline ? <Pause className="w-3 h-3 text-black" /> : <Play className="w-3 h-3 text-[#c5a059]" />}
+                  <span>{isPlayingTimeline ? "PAUSE EVOLUTION" : "AUTOPLAY TIMELINE"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Timeline Year Selectors & Scrubber */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 font-mono">
+              {TIMELINE_MILESTONES.map((m) => {
+                const isCurrent = chronologicalYear === m.year;
+                const isPast = chronologicalYear >= m.year;
+                return (
+                  <button
+                    key={m.year}
+                    onClick={() => {
+                      setChronologicalYear(m.year);
+                      if (simulationRef.current) simulationRef.current.alpha(0.2).restart();
+                    }}
+                    className={`p-2 text-left border transition-all ${
+                      isCurrent
+                        ? "bg-[#241c0e] border-[#c5a059] text-white shadow-md ring-1 ring-[#c5a059]"
+                        : isPast
+                        ? "bg-[#101010] border-white/15 text-white/80 hover:border-white/30"
+                        : "bg-[#080808] border-white/5 text-white/30 hover:text-white/60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className={`font-bold ${isCurrent ? "text-[#c5a059]" : ""}`}>{m.year}</span>
+                      <span className="text-[8px] text-white/40">{m.activePartnersCount} Partners</span>
+                    </div>
+                    <div className="text-[9px] text-white/60 truncate mt-0.5">{m.title}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Scenario Engine Dynamic Event Ticker (when Auto-Update is active) */}
       <AnimatePresence>

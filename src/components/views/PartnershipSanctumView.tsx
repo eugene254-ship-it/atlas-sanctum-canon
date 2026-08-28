@@ -4,6 +4,7 @@ import { PartnershipTarget, NavigationSpace } from "../../types";
 import { useSystemState } from "../../context/SystemContext";
 import { PartnershipNetworkGraph, StrategicClusterType } from "../PartnershipNetworkGraph";
 import { PartnershipDeepAnalysisModal } from "../PartnershipDeepAnalysisModal";
+import { Sparkline } from "../PartnershipSparkline";
 import {
   Globe,
   Cloud,
@@ -48,7 +49,16 @@ import {
   ShieldAlert,
   PanelRightClose,
   PanelRightOpen,
-  Pin
+  Pin,
+  Radar,
+  ListFilter,
+  CheckSquare,
+  Square,
+  Clock,
+  Radio,
+  FileCheck,
+  Eye,
+  Plus
 } from "lucide-react";
 
 export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
@@ -464,6 +474,123 @@ export const PARTNERSHIP_TARGETS: PartnershipTarget[] = [
   }
 ];
 
+export const DISCOVERY_CANDIDATE_POOL: PartnershipTarget[] = [
+  {
+    id: "partner-disc-01",
+    carouselPosition: "D1",
+    organization: "CERN Open Science & Quantum Mesh",
+    strategicRole: "Distributed quantum compute, open telemetry grids, particle physics sensor telemetry",
+    strategicPriority: "High",
+    strategicCluster: "Frontier Tech",
+    category: "Frontier AI & Cloud",
+    pillarAlignment: [1, 6, 12, 17],
+    focusAreas: [
+      "Open Data Mesh Protocol",
+      "Quantum Simulation of Hydrological Phase Shifts",
+      "Distributed Sovereign Telemetry Verification",
+      "Sub-atomic Soil Chemistry Modeling"
+    ],
+    capabilitiesOffered: [
+      "Planetary-scale distributed compute fabric for complex systemic simulations",
+      "Peer-reviewed open science verification frameworks resistant to political manipulation",
+      "Low-power quantum-resistant edge encryption standards for community sensor grids"
+    ],
+    strategicRationale:
+      "CERN provides uncompromising, verifiable open-science computing infrastructure to guarantee that all planetary simulation outputs in Atlas Sanctum remain public goods.",
+    jointInitiatives: [
+      {
+        name: "Global Open Telemetry Mesh",
+        horizon: "Horizon 2: Near-Term",
+        targetOutcome: "Connecting 500 academic research stations into live planetary twin ingestion",
+        status: "Discovered Opportunity"
+      }
+    ],
+    measurableImpactTarget: "100% open-access peer-reviewed validation across all simulated living lab outcomes.",
+    keyStakeholders: ["CERN Quantum Technology Initiative", "Open Science Board", "African Physics Society"],
+    readinessScore: 94,
+    badgeColor: "text-amber-400 bg-amber-950/40 border-amber-800",
+    reviewStatus: "Pending Review",
+    onboardingYear: 2026,
+    discoverySource: "Graph Topology Ingestion & Open Science Clustering"
+  },
+  {
+    id: "partner-disc-02",
+    carouselPosition: "D2",
+    organization: "AfCFTA Pan-African Payment & Settlement System (PAPSS)",
+    strategicRole: "Intra-African local currency trade settlement, digital customs, economic corridors",
+    strategicPriority: "High",
+    strategicCluster: "African Infrastructure",
+    category: "Digital & Economic Infrastructure",
+    pillarAlignment: [4, 9, 14, 19],
+    focusAreas: [
+      "Local Currency Sovereign Settlement",
+      "Cross-Border Living Lab Capital Flows",
+      "Frictionless Agro-Ecological Trade Corridors",
+      "Pan-African Digital Rules of Origin"
+    ],
+    capabilitiesOffered: [
+      "Real-time gross settlement across 42 African central banks in local currencies",
+      "Zero dollar-dependency for cross-border materials and technology imports",
+      "Direct integration with municipal and regional regenerative trade ledgers"
+    ],
+    strategicRationale:
+      "PAPSS eliminates foreign exchange friction, saving $5B annually in transaction costs and enabling African living labs to exchange regenerative innovations in sovereign currencies.",
+    jointInitiatives: [
+      {
+        name: "Sovereign Green Trade Clearinghouse",
+        horizon: "Horizon 1: Current State",
+        targetOutcome: "Instant zero-currency-risk settlement for pan-African restorative supply chains",
+        status: "Discovered Opportunity"
+      }
+    ],
+    measurableImpactTarget: "$10B in regenerative trade routed through local currency rails by 2028.",
+    keyStakeholders: ["Afreximbank PAPSS Secretariat", "African Union Commission", "Central Bank Governors Forum"],
+    readinessScore: 95,
+    badgeColor: "text-rose-400 bg-rose-950/40 border-rose-800",
+    reviewStatus: "Pending Review",
+    onboardingYear: 2026,
+    discoverySource: "Sovereign Financial Infrastructure Pattern Match"
+  },
+  {
+    id: "partner-disc-03",
+    carouselPosition: "D3",
+    organization: "Gavi Vaccine & Cold-Chain IoT Alliance",
+    strategicRole: "Autonomous solar cold-chains, health telemetry, community resilience clinics",
+    strategicPriority: "Medium",
+    strategicCluster: "Global Development",
+    category: "Philanthropic Foundations",
+    pillarAlignment: [3, 8, 13, 16],
+    focusAreas: [
+      "Off-Grid Solar Cold Chain Telemetry",
+      "Last-Mile Health Infrastructure",
+      "Predictive Epidemic Water-Vector Modeling",
+      "Community Wellness Guilds"
+    ],
+    capabilitiesOffered: [
+      "Over 100,000 smart remote temperature monitoring IoT sensors across rural health clinics",
+      "Deep field delivery logistics reaching the most isolated 20% of African rural populations",
+      "Direct integration with clean water and sanitation living lab telemetry"
+    ],
+    strategicRationale:
+      "Gavi expands the 7-Capitals model into human biological resilience and provides an existing physical cold-chain network that doubles as distributed climate telemetry stations.",
+    jointInitiatives: [
+      {
+        name: "Dual-Use Health & Climate Telemetry Stations",
+        horizon: "Horizon 2: Near-Term",
+        targetOutcome: "Upgrading 25,000 vaccine solar coolers with environmental & air quality sensors",
+        status: "Discovered Opportunity"
+      }
+    ],
+    measurableImpactTarget: "45M rural inhabitants provided with integrated climate-health early warning by 2029.",
+    keyStakeholders: ["Gavi Innovation Unit", "WHO Regional Office for Africa", "UNICEF Supply Division"],
+    readinessScore: 89,
+    badgeColor: "text-emerald-400 bg-emerald-950/40 border-emerald-800",
+    reviewStatus: "Pending Review",
+    onboardingYear: 2025,
+    discoverySource: "Living Lab Sensor Footprint Ingestion"
+  }
+];
+
 const STRATEGIC_CATEGORIES = [
   { id: "Frontier AI & Cloud", label: "Frontier AI & Cloud", count: 4, color: "text-sky-400", border: "border-sky-800", bg: "bg-sky-950/40" },
   { id: "Multilateral & Development Finance", label: "Multilateral & Development Finance", count: 3, color: "text-emerald-400", border: "border-emerald-800", bg: "bg-emerald-950/40" },
@@ -488,6 +615,14 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
   africaMode = true,
 }) => {
   const { navigateTo, addEvent } = useSystemState();
+
+  // Dynamic Partnership Targets (supports dynamic discovery simulation)
+  const [partnershipTargets, setPartnershipTargets] = useState<PartnershipTarget[]>(PARTNERSHIP_TARGETS);
+  const [discoveryPoolIndex, setDiscoveryPoolIndex] = useState<number>(0);
+  const [isDiscovering, setIsDiscovering] = useState<boolean>(false);
+
+  // Multi-Select Checkboxes for Bulk Operations
+  const [selectedTargetIds, setSelectedTargetIds] = useState<Set<string>>(new Set());
 
   // Multi-Filter Sidebar State
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(true);
@@ -523,7 +658,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
 
   // Derived Filtered Targets
   const filteredTargets = useMemo(() => {
-    return PARTNERSHIP_TARGETS.filter((target) => {
+    return partnershipTargets.filter((target) => {
       // 0. Strategic Cluster Filter
       if (selectedCluster !== "ALL") {
         const targetCluster = target.strategicCluster || (target.category === "Frontier AI & Cloud" ? "Frontier Tech" : target.category === "Digital & Economic Infrastructure" ? "African Infrastructure" : "Global Development");
@@ -558,7 +693,7 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
       }
       return true;
     });
-  }, [selectedCluster, selectedCategories, selectedPriorities, minReadiness, searchQuery]);
+  }, [partnershipTargets, selectedCluster, selectedCategories, selectedPriorities, minReadiness, searchQuery]);
 
   // Aggregate Impact Calculations across filtered organizations
   const aggregateMetrics = useMemo(() => {
@@ -838,6 +973,191 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
     });
   };
 
+  // Multi-Select Checkbox Handlers
+  const handleToggleSelectTarget = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedTargetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTargetIds.size === filteredTargets.length) {
+      setSelectedTargetIds(new Set());
+    } else {
+      setSelectedTargetIds(new Set(filteredTargets.map((t) => t.id)));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTargetIds(new Set());
+  };
+
+  // Bulk Actions
+  const handleBulkSyncToSystem = () => {
+    if (selectedTargetIds.size === 0) return;
+    const selectedTargets = partnershipTargets.filter((t) => selectedTargetIds.has(t.id));
+    const newSynced = new Set(syncedPartnerIds);
+    selectedTargets.forEach((t) => newSynced.add(t.id));
+    setSyncedPartnerIds(newSynced);
+
+    setSyncToastMessage(`Successfully synced ${selectedTargets.length} selected partners to Mission Control!`);
+    setTimeout(() => setSyncToastMessage(null), 4500);
+
+    addEvent({
+      severity: "SUCCESS",
+      subsystem: "MISSION-CONTROL",
+      title: "Bulk Alliances Synchronized",
+      message: `Bulk synchronized ${selectedTargets.length} selected institutional partners into Mission Control active execution portfolio.`,
+      actionTargetSpace: "mission-control",
+      actionLabel: "View in Mission Control",
+    });
+  };
+
+  const handleBulkExportCSV = () => {
+    const targetsToExport = selectedTargetIds.size > 0
+      ? partnershipTargets.filter((t) => selectedTargetIds.has(t.id))
+      : filteredTargets;
+
+    const headers = [
+      "Carousel Position",
+      "Organization",
+      "Strategic Priority",
+      "Strategic Cluster",
+      "Industry Category",
+      "Readiness Score (%)",
+      "Strategic Role",
+      "Review Status",
+      "Discovery Source",
+      "Core Focus Areas",
+      "Capabilities Brought",
+      "Strategic Civilizational Rationale",
+      "Measurable Impact Target",
+      "Joint Initiatives",
+      "Key Stakeholders",
+      "Synced to Mission Control"
+    ];
+
+    const escapeCSV = (val: string | number | undefined | null) => {
+      if (val === undefined || val === null) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = targetsToExport.map((t) => {
+      const initiativesStr = t.jointInitiatives
+        .map((j) => `[${j.name} (${j.horizon}, ${j.status}): ${j.targetOutcome}]`)
+        .join(" | ");
+
+      return [
+        escapeCSV(t.carouselPosition),
+        escapeCSV(t.organization),
+        escapeCSV(t.strategicPriority || "High"),
+        escapeCSV(t.strategicCluster || "Frontier Tech"),
+        escapeCSV(t.category),
+        escapeCSV(t.readinessScore),
+        escapeCSV(t.strategicRole),
+        escapeCSV(t.reviewStatus || "Active"),
+        escapeCSV(t.discoverySource || "Core Strategic Coalition"),
+        escapeCSV(t.focusAreas.join(" | ")),
+        escapeCSV(t.capabilitiesOffered.join(" | ")),
+        escapeCSV(t.strategicRationale),
+        escapeCSV(t.measurableImpactTarget),
+        escapeCSV(initiativesStr),
+        escapeCSV(t.keyStakeholders.join(" | ")),
+        escapeCSV(syncedPartnerIds.has(t.id) ? "Yes" : "No")
+      ].join(",");
+    });
+
+    const csvContent = [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Atlas-Sanctum-Selected-Partners-${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setSyncToastMessage(`Exported ${targetsToExport.length} selected partners to CSV!`);
+    setTimeout(() => setSyncToastMessage(null), 4000);
+  };
+
+  // AI Partnership Discovery Engine Simulator
+  const handleRunDiscovery = () => {
+    if (isDiscovering) return;
+    setIsDiscovering(true);
+
+    addEvent({
+      severity: "INFO",
+      subsystem: "PARTNERSHIPS",
+      title: "Discovery Protocol Active",
+      message: "Analyzing network topology clustering, capital flows, and living lab gaps for emergent alliance opportunities...",
+      actionTargetSpace: "partnerships",
+    });
+
+    setTimeout(() => {
+      const candidateToInject = DISCOVERY_CANDIDATE_POOL[discoveryPoolIndex % DISCOVERY_CANDIDATE_POOL.length];
+      const alreadyExists = partnershipTargets.some((t) => t.id === candidateToInject.id);
+
+      if (!alreadyExists) {
+        setPartnershipTargets((prev) => [candidateToInject, ...prev]);
+        setDiscoveryPoolIndex((prev) => prev + 1);
+        setSelectedPartner(candidateToInject);
+
+        setSyncToastMessage(`Discovered new partner: "${candidateToInject.organization}" (Pending Review)!`);
+        setTimeout(() => setSyncToastMessage(null), 5000);
+
+        addEvent({
+          severity: "SUCCESS",
+          subsystem: "PARTNERSHIPS",
+          title: `New Partner Opportunity Discovered`,
+          message: `Network graph pattern analysis discovered ${candidateToInject.organization} (Readiness: ${candidateToInject.readinessScore}%). Added with 'Pending Review' status.`,
+          actionTargetSpace: "partnerships",
+        });
+      } else {
+        setSyncToastMessage("Graph Discovery scan complete: Current alliance mesh topology fully optimized.");
+        setTimeout(() => setSyncToastMessage(null), 4000);
+      }
+
+      setIsDiscovering(false);
+    }, 1200);
+  };
+
+  const handleAcceptDiscovery = (targetId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPartnershipTargets((prev) =>
+      prev.map((t) => (t.id === targetId ? { ...t, reviewStatus: undefined } : t))
+    );
+    setSyncToastMessage("Partner approved and formally inducted into core coalition!");
+    setTimeout(() => setSyncToastMessage(null), 4000);
+
+    addEvent({
+      severity: "SUCCESS",
+      subsystem: "PARTNERSHIPS",
+      title: "Alliance Formalized",
+      message: `Formally confirmed discovered partner into active strategic ecosystem.`,
+      actionTargetSpace: "partnerships",
+    });
+  };
+
+  const handleDismissDiscovery = (targetId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPartnershipTargets((prev) => prev.filter((t) => t.id !== targetId));
+    setSelectedTargetIds((prev) => {
+      const next = new Set(prev);
+      next.delete(targetId);
+      return next;
+    });
+    setSyncToastMessage("Discovery candidate archived.");
+    setTimeout(() => setSyncToastMessage(null), 3000);
+  };
+
   const getPriorityBadgeClass = (priority?: "High" | "Medium" | "Low") => {
     switch (priority) {
       case "High":
@@ -930,8 +1250,28 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
               </div>
             </div>
 
-            {/* Top Header Actions: Toggle Heatmap & Export Data & Sync All */}
+            {/* Top Header Actions: Discovery, Toggle Heatmap, Export Data & Sync All */}
             <div className="flex flex-wrap items-center gap-2.5 font-mono text-[10px]">
+              {/* Simulate AI Discovery Button */}
+              <button
+                id="btn-run-partnership-discovery"
+                onClick={handleRunDiscovery}
+                disabled={isDiscovering}
+                className={`px-3.5 py-2 border uppercase tracking-wider font-bold flex items-center space-x-1.5 transition-all shadow-md ${
+                  isDiscovering
+                    ? "bg-amber-950/80 border-amber-500 text-amber-300 animate-pulse cursor-wait"
+                    : "bg-[#161208] hover:bg-[#241c0e] border-[#c5a059]/80 text-[#c5a059] hover:text-white"
+                }`}
+                title="Simulate network graph pattern discovery to find new high-leverage partners"
+              >
+                {isDiscovering ? (
+                  <Activity className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                ) : (
+                  <Radar className="w-3.5 h-3.5 text-[#c5a059]" />
+                )}
+                <span>{isDiscovering ? "Scanning Topology..." : "Discover Partners"}</span>
+              </button>
+
               {/* Toggle Summary Sidebar Button */}
               <button
                 id="btn-toggle-summary-sidebar"
@@ -983,6 +1323,117 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                 <span>Sync to Mission Control ({filteredTargets.length})</span>
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* NEW PERFORMANCE DASHBOARD: SPARKLINE METRICS & SYSTEMIC VELOCITY */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Metric 1: Network Velocity */}
+        <div className="p-4 bg-[#0a0a0a] border border-white/10 space-y-2 shadow-lg relative overflow-hidden group hover:border-[#c5a059]/40 transition-all">
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/50">
+            <span className="flex items-center space-x-1.5 text-sky-400">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Network Velocity</span>
+            </span>
+            <span className="px-1.5 py-0.5 bg-sky-950 text-sky-300 border border-sky-800 text-[9px] font-bold">
+              +42% YoY
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-xl font-serif font-light text-white">3.4 <span className="text-xs font-mono text-white/50">Alliances/Qtr</span></div>
+              <div className="text-[10px] text-white/40 font-mono mt-0.5">Rate of new partner integration</div>
+            </div>
+            <Sparkline
+              data={[1.2, 1.5, 1.8, 2.2, 2.8, 3.4]}
+              width={85}
+              height={32}
+              color="#38bdf8"
+              fillGradientId="spark-velocity"
+            />
+          </div>
+        </div>
+
+        {/* Metric 2: Systemic Connectivity Index */}
+        <div className="p-4 bg-[#0a0a0a] border border-white/10 space-y-2 shadow-lg relative overflow-hidden group hover:border-[#c5a059]/40 transition-all">
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/50">
+            <span className="flex items-center space-x-1.5 text-[#c5a059]">
+              <Network className="w-3.5 h-3.5" />
+              <span>Systemic Connectivity Index</span>
+            </span>
+            <span className="px-1.5 py-0.5 bg-[#241c0e] text-[#c5a059] border border-[#c5a059]/50 text-[9px] font-bold">
+              96.4 / 100
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-xl font-serif font-light text-white">Dense Multi-Mesh</div>
+              <div className="text-[10px] text-white/40 font-mono mt-0.5">Multi-capital cross-linkage ratio</div>
+            </div>
+            <Sparkline
+              data={[78, 82, 85, 89, 93, 96.4]}
+              width={85}
+              height={32}
+              color="#c5a059"
+              fillGradientId="spark-connectivity"
+            />
+          </div>
+        </div>
+
+        {/* Metric 3: Cross-Capital Activation Rate */}
+        <div className="p-4 bg-[#0a0a0a] border border-white/10 space-y-2 shadow-lg relative overflow-hidden group hover:border-[#c5a059]/40 transition-all">
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/50">
+            <span className="flex items-center space-x-1.5 text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>7-Capitals Co-Activation</span>
+            </span>
+            <span className="px-1.5 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] font-bold">
+              91.8% Co-Funded
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-xl font-serif font-light text-white">7/7 Capitals Active</div>
+              <div className="text-[10px] text-white/40 font-mono mt-0.5">Zero extractive single-metric bias</div>
+            </div>
+            <Sparkline
+              data={[68, 74, 80, 85, 89, 91.8]}
+              width={85}
+              height={32}
+              color="#10b981"
+              fillGradientId="spark-capitals"
+            />
+          </div>
+        </div>
+
+        {/* Metric 4: Catalytic Syndication Liquidity */}
+        <div className="p-4 bg-[#0a0a0a] border border-white/10 space-y-2 shadow-lg relative overflow-hidden group hover:border-[#c5a059]/40 transition-all">
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/50">
+            <span className="flex items-center space-x-1.5 text-amber-400">
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>Catalytic Capital Mobilized</span>
+            </span>
+            <span className="px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 text-[9px] font-bold">
+              {aggregateMetrics.blendedCapitalEst}
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-xl font-serif font-light text-white">Blended Facility</div>
+              <div className="text-[10px] text-white/40 font-mono mt-0.5">Concessional & tech in-kind</div>
+            </div>
+            <Sparkline
+              data={[10.5, 14.2, 18.0, 22.4, 26.8]}
+              width={85}
+              height={32}
+              color="#f59e0b"
+              fillGradientId="spark-capital"
+            />
           </div>
         </div>
       </div>
@@ -1597,6 +2048,11 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                         <span className="text-xs font-mono text-[#c5a059] px-2 py-0.5 bg-black border border-white/10">
                           {filteredTargets.length} Filtered Targets
                         </span>
+                        {partnershipTargets.some((t) => t.reviewStatus === "Pending Review") && (
+                          <span className="text-xs font-mono text-amber-300 px-2 py-0.5 bg-amber-950/80 border border-amber-500 animate-pulse">
+                            {partnershipTargets.filter((t) => t.reviewStatus === "Pending Review").length} Discovery Pending Review
+                          </span>
+                        )}
                       </h3>
                       <p className="text-xs text-white/50 font-sans">
                         Comprehensive institutional, technical, and 7-Capitals mapping of the core regenerative coalition.
@@ -1604,6 +2060,16 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                     </div>
 
                     <div className="flex items-center space-x-2 font-mono text-[10px]">
+                      <button
+                        onClick={handleRunDiscovery}
+                        disabled={isDiscovering}
+                        className="px-3.5 py-2 bg-[#1b1509] hover:bg-[#281e0c] border border-[#c5a059] text-[#c5a059] uppercase tracking-[0.15em] flex items-center space-x-1.5 transition-all font-bold"
+                        title="Simulate network topology pattern discovery"
+                      >
+                        <Radar className={`w-3.5 h-3.5 ${isDiscovering ? "animate-spin" : ""}`} />
+                        <span>Discover Partners</span>
+                      </button>
+
                       <button
                         onClick={handleExportDataCSV}
                         className="px-3.5 py-2 bg-[#141414] hover:bg-[#1f1f1f] border border-[#c5a059]/60 hover:border-[#c5a059] text-[#c5a059] uppercase tracking-[0.15em] flex items-center space-x-1.5 transition-all font-bold"
@@ -1623,14 +2089,83 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                     </div>
                   </div>
 
+                  {/* Multi-Select Bulk Actions Toolbar (Sticky Bar when items are selected) */}
+                  <AnimatePresence>
+                    {selectedTargetIds.size > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="p-3 bg-gradient-to-r from-[#18140b] via-[#101010] to-[#18140b] border border-[#c5a059] flex flex-wrap items-center justify-between gap-3 shadow-2xl font-mono text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <CheckSquare className="w-4 h-4 text-[#c5a059]" />
+                          <span className="font-bold text-white">
+                            {selectedTargetIds.size} {selectedTargetIds.size === 1 ? "Partner" : "Partners"} Selected
+                          </span>
+                          <span className="text-white/40 text-[10px]">
+                            ({(
+                              (partnershipTargets.filter((t) => selectedTargetIds.has(t.id)).reduce((acc, t) => acc + t.readinessScore, 0) / selectedTargetIds.size) || 0
+                            ).toFixed(1)}% Avg Alignment)
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                          {/* Bulk Sync */}
+                          <button
+                            id="btn-bulk-sync-mission-control"
+                            onClick={handleBulkSyncToSystem}
+                            className="px-3 py-1.5 bg-[#c5a059] hover:bg-[#b08d48] text-black font-extrabold uppercase tracking-wider flex items-center space-x-1.5 transition-all shadow-md"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Sync Selected ({selectedTargetIds.size}) to Mission Control</span>
+                          </button>
+
+                          {/* Bulk CSV Export */}
+                          <button
+                            id="btn-bulk-export-csv"
+                            onClick={handleBulkExportCSV}
+                            className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#252525] border border-white/20 text-white font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-all"
+                          >
+                            <Download className="w-3.5 h-3.5 text-[#c5a059]" />
+                            <span>Export Selected CSV ({selectedTargetIds.size})</span>
+                          </button>
+
+                          {/* Clear Selection */}
+                          <button
+                            onClick={handleClearSelection}
+                            className="px-2.5 py-1.5 bg-transparent hover:bg-white/10 text-white/60 hover:text-white uppercase tracking-wider"
+                          >
+                            Clear Selection
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs font-mono">
                       <thead className="bg-[#080808] border-b border-white/10 text-[10px] uppercase tracking-wider text-white/50">
                         <tr>
-                          <th className="py-3 px-4">Pos</th>
+                          <th className="py-3 px-3 w-10 text-center">
+                            <button
+                              id="checkbox-select-all"
+                              onClick={handleSelectAll}
+                              className="text-[#c5a059] hover:text-white p-1 transition-colors"
+                              title={selectedTargetIds.size === filteredTargets.length ? "Deselect All" : "Select All"}
+                            >
+                              {selectedTargetIds.size === filteredTargets.length && filteredTargets.length > 0 ? (
+                                <CheckSquare className="w-4 h-4 text-[#c5a059]" />
+                              ) : (
+                                <Square className="w-4 h-4 text-white/40" />
+                              )}
+                            </button>
+                          </th>
+                          <th className="py-3 px-3">Pos</th>
                           <th className="py-3 px-4">Organization</th>
                           <th className="py-3 px-4">Cluster</th>
                           <th className="py-3 px-4">Priority Tag</th>
+                          <th className="py-3 px-4">Status</th>
                           <th className="py-3 px-4">Industry Focus</th>
                           <th className="py-3 px-4">Alignment</th>
                           <th className="py-3 px-4 text-right">Actions</th>
@@ -1639,6 +2174,9 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                       <tbody className="divide-y divide-white/5 text-white/80">
                         {filteredTargets.map((p) => {
                           const isSynced = syncedPartnerIds.has(p.id);
+                          const isSelected = selectedTargetIds.has(p.id);
+                          const isPending = p.reviewStatus === "Pending Review";
+
                           return (
                             <tr
                               key={p.id}
@@ -1647,33 +2185,80 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                                 setActiveViewSection("carousel");
                               }}
                               className={`hover:bg-[#121212] transition-colors cursor-pointer ${
-                                impactHeatmapEnabled && p.strategicPriority === "High" ? "bg-emerald-950/10" : ""
+                                isSelected
+                                  ? "bg-[#1c180e]/40 border-l-2 border-[#c5a059]"
+                                  : isPending
+                                  ? "bg-amber-950/15 border-l-2 border-amber-500/80"
+                                  : impactHeatmapEnabled && p.strategicPriority === "High"
+                                  ? "bg-emerald-950/10"
+                                  : ""
                               }`}
                             >
-                              <td className="py-3 px-4 text-[#c5a059] font-bold">{p.carouselPosition}</td>
+                              {/* Selection Checkbox */}
+                              <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  id={`checkbox-target-${p.id}`}
+                                  onClick={(e) => handleToggleSelectTarget(p.id, e)}
+                                  className="text-white/40 hover:text-white p-1"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-[#c5a059]" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-white/30 hover:text-white/60" />
+                                  )}
+                                </button>
+                              </td>
+
+                              <td className="py-3 px-3 text-[#c5a059] font-bold">{p.carouselPosition}</td>
+
                               <td className="py-3 px-4 font-serif text-sm text-white font-medium">
                                 <div className="flex items-center space-x-2">
                                   <span>{p.organization}</span>
                                   {isSynced && (
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-400" title="Synced to Mission Control" />
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" title="Synced to Mission Control" />
+                                  )}
+                                  {isPending && (
+                                    <span className="px-1.5 py-0.2 bg-amber-950 text-amber-300 border border-amber-600 text-[8px] font-mono uppercase font-bold tracking-wider animate-pulse">
+                                      Discovered
+                                    </span>
                                   )}
                                 </div>
                               </td>
+
                               <td className="py-3 px-4">
                                 <span className="px-2 py-0.5 bg-[#141414] border border-white/10 text-[9px] text-[#c5a059] font-bold">
                                   {p.strategicCluster || "Frontier Tech"}
                                 </span>
                               </td>
+
                               <td className="py-3 px-4">
                                 <span className={`px-2 py-0.5 border text-[9px] font-bold ${getPriorityBadgeClass(p.strategicPriority)}`}>
                                   {p.strategicPriority || "High"} Priority
                                 </span>
                               </td>
+
+                              {/* Review / Discovery Status */}
+                              <td className="py-3 px-4">
+                                {isPending ? (
+                                  <div className="flex items-center space-x-1.5">
+                                    <span className="px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-600 text-[9px] font-bold flex items-center space-x-1">
+                                      <Clock className="w-2.5 h-2.5 text-amber-400" />
+                                      <span>Pending Review</span>
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-emerald-950/40 text-emerald-400 border border-emerald-800 text-[9px] font-bold">
+                                    Active Coalition
+                                  </span>
+                                )}
+                              </td>
+
                               <td className="py-3 px-4">
                                 <span className="px-2 py-0.5 bg-[#141414] border border-white/10 text-[9px] text-white/60">
                                   {p.category}
                                 </span>
                               </td>
+
                               <td className="py-3 px-4">
                                 <div className="flex items-center space-x-2">
                                   <div className="w-16 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
@@ -1685,8 +2270,32 @@ export const PartnershipSanctumView: React.FC<PartnershipSanctumViewProps> = ({
                                   <span className="text-[10px] text-white/50">{p.readinessScore}%</span>
                                 </div>
                               </td>
+
                               <td className="py-3 px-4 text-right">
-                                <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end space-x-1.5" onClick={(e) => e.stopPropagation()}>
+                                  {/* If Pending Review, show Approve and Dismiss actions */}
+                                  {isPending ? (
+                                    <>
+                                      <button
+                                        id={`btn-approve-discovery-${p.id}`}
+                                        onClick={(e) => handleAcceptDiscovery(p.id, e)}
+                                        className="px-2 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-600 text-[9px] uppercase tracking-wider font-bold transition-all flex items-center space-x-1"
+                                        title="Approve Discovery Candidate"
+                                      >
+                                        <Check className="w-3 h-3" />
+                                        <span>Accept</span>
+                                      </button>
+                                      <button
+                                        id={`btn-dismiss-discovery-${p.id}`}
+                                        onClick={(e) => handleDismissDiscovery(p.id, e)}
+                                        className="px-2 py-1 bg-[#1a1a1a] hover:bg-rose-950 text-white/50 hover:text-rose-300 border border-white/10 hover:border-rose-700 text-[9px] uppercase tracking-wider font-bold transition-all"
+                                        title="Dismiss Candidate"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </>
+                                  ) : null}
+
                                   <button
                                     onClick={() => handleTriggerDeepAnalysis(p)}
                                     className="px-2.5 py-1 bg-[#161616] hover:bg-[#c5a059] text-white/70 hover:text-black border border-white/10 text-[9px] uppercase tracking-wider font-bold transition-all"

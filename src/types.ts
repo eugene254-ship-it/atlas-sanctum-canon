@@ -61,7 +61,7 @@ export interface PartnershipTarget {
     name: string;
     horizon: string;
     targetOutcome: string;
-    status: "Exploring" | "Blueprint Ready" | "Active Pilot" | "Scaling";
+    status: "Exploring" | "Blueprint Ready" | "Active Pilot" | "Scaling" | "Discovered Opportunity";
   }[];
   measurableImpactTarget: string;
   keyStakeholders: string[];
@@ -85,6 +85,9 @@ export interface PartnershipTarget {
     deliverables: string[];
   }[];
   isSyncedToMissionControl?: boolean;
+  reviewStatus?: "Confirmed" | "Pending Review";
+  onboardingYear?: number;
+  discoverySource?: string;
 }
 
 export interface CanonPillar {

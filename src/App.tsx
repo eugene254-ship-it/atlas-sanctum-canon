@@ -5,13 +5,14 @@ import { SystemProvider, useSystemState } from "./context/SystemContext";
 import { Navigation } from "./components/Navigation";
 import { DailyBriefModal } from "./components/DailyBriefModal";
 import { CanonDrawer } from "./components/CanonDrawer";
+import { SettingsModal } from "./components/SettingsModal";
 import { SystemTelemetry } from "./components/SystemTelemetry";
 import { CommandPalette } from "./components/CommandPalette";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 import { SystemFooter } from "./components/SystemFooter";
 import { SoundscapeModal } from "./components/SoundscapeModal";
 import { ScratchpadDrawer } from "./components/ScratchpadDrawer";
-import { Minimize, Sun, Zap, CheckCircle2 } from "lucide-react";
+import { Minimize, Sun, Zap, CheckCircle2, AlertTriangle, X } from "lucide-react";
 
 import { HomeScreen } from "./components/views/HomeScreen";
 import { QuestionEngineView } from "./components/views/QuestionEngineView";
@@ -51,12 +52,16 @@ function AppInner() {
     setIsDeepFocus,
     isZenMode,
     setIsZenMode,
+    isSettingsOpen,
+    setIsSettingsOpen,
     africaMode,
     setAfricaMode,
     activeQuestionId,
     setActiveQuestionId,
     macroExecutionStatus,
-    executeMacro
+    executeMacro,
+    activeAnomalyToast,
+    dismissAnomalyToast,
   } = useSystemState();
 
   const handleLaunchQuestion = (questionTitle: string) => {
@@ -118,6 +123,9 @@ function AppInner() {
       if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
         setIsShortcutsOpen(!isShortcutsOpen);
+      } else if (e.key === "," || (e.shiftKey && e.key.toLowerCase() === "s")) {
+        e.preventDefault();
+        setIsSettingsOpen(!isSettingsOpen);
       } else if (e.key.toLowerCase() === "z") {
         e.preventDefault();
         setIsZenMode(!isZenMode);
@@ -145,6 +153,18 @@ function AppInner() {
       } else if (e.key.toLowerCase() === "p") {
         e.preventDefault();
         setCurrentSpace("partnerships");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        setCurrentSpace("scenario-engine");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        setCurrentSpace("agents");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (e.key.toLowerCase() === "m") {
+        e.preventDefault();
+        setCurrentSpace("patterns-memory");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (e.key === "1") {
         e.preventDefault();
@@ -281,6 +301,7 @@ function AppInner() {
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           onToggleTelemetry={() => setIsTelemetryOpen(!isTelemetryOpen)}
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
           onToggleZenMode={() => setIsZenMode(!isZenMode)}
           isZenMode={isZenMode}
           africaMode={africaMode}
@@ -500,6 +521,7 @@ function AppInner() {
         onToggleAfricaMode={() => setAfricaMode(!africaMode)}
         onToggleTelemetry={() => setIsTelemetryOpen(!isTelemetryOpen)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenSoundscape={() => setIsSoundscapeOpen(true)}
         onOpenScratchpad={() => setIsScratchpadOpen(true)}
         onToggleDeepFocus={() => setIsDeepFocus(!isDeepFocus)}
@@ -546,6 +568,66 @@ function AppInner() {
         isOpen={isCanonOpen}
         onClose={() => setIsCanonOpen(false)}
       />
+
+      {/* System Preferences & Data Theme Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* Subtle Anomaly Detection Alert Toast */}
+      {activeAnomalyToast && (
+        <div
+          id="toast-anomaly-detection"
+          className="fixed top-5 right-5 z-50 max-w-sm sm:max-w-md bg-[#0e0707] border border-amber-500/60 shadow-[0_10px_30px_rgba(0,0,0,0.85)] p-3.5 flex items-start space-x-3 text-xs font-mono animate-fadeIn"
+        >
+          <div className="p-1.5 bg-amber-950/60 border border-amber-500/40 text-amber-400 shrink-0 mt-0.5">
+            <AlertTriangle className="w-4 h-4 animate-pulse" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-amber-400 font-bold uppercase tracking-wider text-[10px] flex items-center space-x-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span>ANOMALY DETECTED</span>
+              </span>
+              <span className="text-white/40 text-[9px]">{activeAnomalyToast.timestamp}</span>
+            </div>
+            <p className="text-white/90 text-[11px] leading-relaxed font-mono">
+              {activeAnomalyToast.message}
+            </p>
+            <div className="pt-1.5 flex items-center space-x-2 text-[10px]">
+              <button
+                id="btn-toast-inspect-swarm"
+                onClick={() => {
+                  setCurrentSpace("agents");
+                  dismissAnomalyToast();
+                }}
+                className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 uppercase tracking-wider transition-colors"
+              >
+                Inspect Swarm
+              </button>
+              <button
+                id="btn-toast-view-telemetry"
+                onClick={() => {
+                  setIsTelemetryOpen(true);
+                  dismissAnomalyToast();
+                }}
+                className="px-2 py-0.5 bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 uppercase tracking-wider transition-colors"
+              >
+                Telemetry
+              </button>
+            </div>
+          </div>
+          <button
+            id="btn-toast-dismiss-anomaly"
+            onClick={dismissAnomalyToast}
+            className="text-white/40 hover:text-white p-1 hover:bg-white/5 transition-colors"
+            title="Dismiss notification"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { NavigationSpace, SystemEventNotification, UserMacro, EventSeverity } from "../types";
 import { soundscape } from "../services/soundscape";
+
+export interface AnomalyAlert {
+  id: string;
+  agentId?: string;
+  agentName?: string;
+  timestamp: string;
+  type: "LATENCY_SPIKE" | "JITTER_VARIANCE" | "PACKET_DROP" | "THROUGHPUT_COLLAPSE";
+  severity: "WARN" | "CRITICAL";
+  latencyMs: number;
+  thresholdMs: number;
+  message: string;
+}
 
 interface SystemContextType {
   // Navigation & Space
@@ -35,6 +47,26 @@ interface SystemContextType {
   // Epistemic Context
   activeQuestionId?: string;
   setActiveQuestionId: (id?: string) => void;
+
+  // Data Visualization Theme & System Settings
+  chartTheme: "high-contrast" | "minimalist";
+  setChartTheme: (theme: "high-contrast" | "minimalist") => void;
+  toggleChartTheme: () => void;
+  isSettingsOpen: boolean;
+  setIsSettingsOpen: (open: boolean) => void;
+
+  // Changes Saved Timestamp
+  lastSavedTimestamp: string | null;
+  lastSavedSource: string | null;
+  recordSavedChange: (source?: string) => void;
+
+  // Anomaly Detection Subsystem
+  isAnomalyDetectionActive: boolean;
+  setIsAnomalyDetectionActive: (active: boolean | ((prev: boolean) => boolean)) => void;
+  toggleAnomalyDetection: () => void;
+  activeAnomalyToast: AnomalyAlert | null;
+  dismissAnomalyToast: () => void;
+  triggerSimulatedAnomaly: (customAlert?: Partial<AnomalyAlert>) => void;
 
   // Event Log Subsystem
   events: SystemEventNotification[];
@@ -185,6 +217,167 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isZenMode, setIsZenMode] = useState(false);
   const [africaMode, setAfricaMode] = useState(true);
   const [activeQuestionId, setActiveQuestionId] = useState<string | undefined>(undefined);
+
+  // Data Visualization Theme (High-Contrast vs Minimalist)
+  const [chartTheme, setChartThemeState] = useState<"high-contrast" | "minimalist">(() => {
+    try {
+      const saved = localStorage.getItem("atlas_chart_theme");
+      if (saved === "high-contrast" || saved === "minimalist") return saved;
+    } catch (e) {}
+    return "high-contrast";
+  });
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Changes Saved Timestamp tracking (for Mission Control, Scenario Engine, etc.)
+  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string | null>(null);
+  const [lastSavedSource, setLastSavedSource] = useState<string | null>(null);
+
+  const setChartTheme = useCallback((theme: "high-contrast" | "minimalist") => {
+    setChartThemeState(theme);
+    try {
+      localStorage.setItem("atlas_chart_theme", theme);
+    } catch (e) {}
+  }, []);
+
+  const toggleChartTheme = useCallback(() => {
+    setChartThemeState((prev) => {
+      const next = prev === "high-contrast" ? "minimalist" : "high-contrast";
+      try {
+        localStorage.setItem("atlas_chart_theme", next);
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  const recordSavedChange = useCallback((source?: string) => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    const seconds = now.getSeconds().toString().padStart(2, "0");
+    const timeFormatted = `${hours}:${minutes}:${seconds}`;
+
+    setLastSavedTimestamp(timeFormatted);
+    setLastSavedSource(source || "Active Workspace");
+  }, []);
+
+  // Window event listener for global cross-component saved notifications
+  useEffect(() => {
+    const handleInputSavedEvent = (e: any) => {
+      const source = e.detail?.source || "Workspace";
+      recordSavedChange(source);
+    };
+
+    window.addEventListener("atlas-input-saved", handleInputSavedEvent);
+    return () => window.removeEventListener("atlas-input-saved", handleInputSavedEvent);
+  }, [recordSavedChange]);
+
+  // Anomaly Detection Subsystem
+  const [isAnomalyDetectionActive, setIsAnomalyDetectionActive] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("atlas_anomaly_detection_active");
+      return saved !== null ? saved === "true" : true;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const [activeAnomalyToast, setActiveAnomalyToast] = useState<AnomalyAlert | null>(null);
+  const anomalyTimerRef = useRef<any>(null);
+
+  const toggleAnomalyDetection = useCallback(() => {
+    setIsAnomalyDetectionActive((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("atlas_anomaly_detection_active", String(next));
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  const dismissAnomalyToast = useCallback(() => {
+    setActiveAnomalyToast(null);
+    if (anomalyTimerRef.current) {
+      clearTimeout(anomalyTimerRef.current);
+    }
+  }, []);
+
+  const triggerSimulatedAnomaly = useCallback(
+    (customAlert?: Partial<AnomalyAlert>) => {
+      const now = new Date();
+      const timeFormatted = `${now.getHours().toString().padStart(2, "0")}:${now
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")} UTC`;
+
+      const candidateAgents = [
+        { id: "AG-04", name: "Socratic Inquisitor", threshold: 180 },
+        { id: "AG-01", name: "Causal Loop Architect", threshold: 150 },
+        { id: "AG-07", name: "Scenario Dynamics Engine", threshold: 160 },
+        { id: "AG-06", name: "Blended Capital Structurer", threshold: 150 },
+        { id: "AG-10", name: "Reality Synthesizer", threshold: 190 },
+      ];
+      const target = candidateAgents[Math.floor(Math.random() * candidateAgents.length)];
+      const spikeLatency = Math.floor(280 + Math.random() * 240); // 280ms - 520ms
+
+      const alertData: AnomalyAlert = {
+        id: `anomaly-${Date.now()}`,
+        agentId: customAlert?.agentId || target.id,
+        agentName: customAlert?.agentName || target.name,
+        timestamp: timeFormatted,
+        type: customAlert?.type || "LATENCY_SPIKE",
+        severity: customAlert?.severity || "WARN",
+        latencyMs: customAlert?.latencyMs ?? spikeLatency,
+        thresholdMs: customAlert?.thresholdMs ?? target.threshold,
+        message:
+          customAlert?.message ||
+          `Agent network latency spiked to ${spikeLatency}ms on [${target.id} ${target.name}] (baseline threshold: ${target.threshold}ms).`,
+      };
+
+      setActiveAnomalyToast(alertData);
+      try {
+        soundscape.playTone(440, "sine", 0.15, 0.08);
+      } catch (e) {}
+
+      // Automatically dismiss toast after 7.5 seconds
+      if (anomalyTimerRef.current) clearTimeout(anomalyTimerRef.current);
+      anomalyTimerRef.current = setTimeout(() => {
+        setActiveAnomalyToast(null);
+      }, 7500);
+
+      // Register into global event log as well
+      setEvents((prev) => [
+        {
+          id: `evt-anomaly-${Date.now()}`,
+          timestamp: timeFormatted,
+          severity: alertData.severity,
+          subsystem: "SYSTEM-CORE",
+          title: `Telemetry Anomaly: ${alertData.agentName || alertData.agentId}`,
+          message: alertData.message,
+          actionTargetSpace: "agents",
+          actionLabel: "Inspect Agent Swarm",
+          resolved: false,
+        },
+        ...prev,
+      ]);
+    },
+    []
+  );
+
+  // Background Telemetry Watchdog that samples Agent Network metrics when active
+  useEffect(() => {
+    if (!isAnomalyDetectionActive) return;
+
+    // Periodically run background watchdog check (every 36-45s) to detect simulated irregular spikes
+    const checkInterval = setInterval(() => {
+      // 35% probability of catching a subtle latency jitter or spike during active monitoring
+      if (Math.random() < 0.35) {
+        triggerSimulatedAnomaly();
+      }
+    }, 38000);
+
+    return () => clearInterval(checkInterval);
+  }, [isAnomalyDetectionActive, triggerSimulatedAnomaly]);
 
   const [events, setEvents] = useState<SystemEventNotification[]>(INITIAL_EVENTS);
   const [macros] = useState<UserMacro[]>(DEFAULT_MACROS);
@@ -366,6 +559,20 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setAfricaMode,
         activeQuestionId,
         setActiveQuestionId,
+        chartTheme,
+        setChartTheme,
+        toggleChartTheme,
+        isSettingsOpen,
+        setIsSettingsOpen,
+        lastSavedTimestamp,
+        lastSavedSource,
+        recordSavedChange,
+        isAnomalyDetectionActive,
+        setIsAnomalyDetectionActive,
+        toggleAnomalyDetection,
+        activeAnomalyToast,
+        dismissAnomalyToast,
+        triggerSimulatedAnomaly,
         events,
         addEvent,
         resolveEvent,

@@ -58,6 +58,7 @@ interface CommandPaletteProps {
   onToggleAfricaMode: () => void;
   onToggleTelemetry: () => void;
   onOpenShortcuts: () => void;
+  onOpenSettings?: () => void;
   onOpenSoundscape?: () => void;
   onOpenScratchpad?: () => void;
   onToggleDeepFocus?: () => void;
@@ -79,6 +80,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onToggleAfricaMode,
   onToggleTelemetry,
   onOpenShortcuts,
+  onOpenSettings,
   onOpenSoundscape,
   onOpenScratchpad,
   onToggleDeepFocus,
@@ -549,6 +551,29 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
 
     // System Actions
+    {
+      id: "act-settings",
+      category: "Action",
+      title: "Open System Preferences & Settings",
+      subtitle: "Configure Data Visualization Theme, geographic lens, and system parameters",
+      icon: Sliders,
+      hotkey: ",",
+      action: () => {
+        onOpenSettings?.();
+        onClose();
+      },
+    },
+    {
+      id: "act-chart-theme",
+      category: "Action",
+      title: "Toggle Data Visualization Theme (High-Contrast / Minimalist)",
+      subtitle: "Switch chart rendering style across all system telemetry and Recharts",
+      icon: BarChart3,
+      action: () => {
+        onOpenSettings?.();
+        onClose();
+      },
+    },
     {
       id: "act-zen-mode",
       category: "Action",

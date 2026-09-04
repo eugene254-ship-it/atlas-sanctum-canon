@@ -17,7 +17,8 @@ import {
   Flame,
   Search,
   Sun,
-  HeartHandshake
+  HeartHandshake,
+  Sliders
 } from "lucide-react";
 
 interface NavigationProps {
@@ -28,6 +29,7 @@ interface NavigationProps {
   onOpenCommandPalette: () => void;
   onToggleTelemetry: () => void;
   onOpenShortcuts: () => void;
+  onOpenSettings?: () => void;
   onToggleZenMode?: () => void;
   isZenMode?: boolean;
   africaMode: boolean;
@@ -43,28 +45,35 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenCommandPalette,
   onToggleTelemetry,
   onOpenShortcuts,
+  onOpenSettings,
   onToggleZenMode,
   isZenMode = false,
   africaMode,
   onToggleAfricaMode,
   isTelemetryOpen = false,
 }) => {
-  const primaryNavItems: { id: NavigationSpace; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "home", label: "Overview", icon: Globe },
-    { id: "partnerships", label: "Major Partnerships", icon: HeartHandshake },
-    { id: "question-engine", label: "Question Engine", icon: HelpCircle },
-    { id: "observatory", label: "Observatory", icon: Activity },
-    { id: "world-model", label: "World Model", icon: GitFork },
-    { id: "systems-modeling", label: "Systems Modeling", icon: Layers },
-    { id: "possibility-space", label: "Possibility Space", icon: Sparkles },
-    { id: "studio", label: "Studio (Innovation)", icon: Compass },
-    { id: "mission-control", label: "Mission Control", icon: ShieldCheck },
-    { id: "capital-intelligence", label: "7-Capitals & Finance", icon: BarChart3 },
-    { id: "civilization-dashboard", label: "Civilization Health", icon: Cpu },
-    { id: "scenario-engine", label: "Scenario Engine", icon: Radio },
-    { id: "agents", label: "AI Agent Swarm", icon: Flame },
-    { id: "patterns-memory", label: "Memory & Patterns", icon: BookOpen },
-    { id: "sdk-api", label: "SDK & API", icon: Terminal },
+  const primaryNavItems: {
+    id: NavigationSpace;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    shortcut: string;
+    description: string;
+  }[] = [
+    { id: "home", label: "Overview", icon: Globe, shortcut: "1", description: "Civilization nexus & live intelligence feed" },
+    { id: "partnerships", label: "Major Partnerships", icon: HeartHandshake, shortcut: "P", description: "Global alliance matrix & capital consortium" },
+    { id: "question-engine", label: "Question Engine", icon: HelpCircle, shortcut: "2", description: "Socratic inquiry & first-principles unmasking" },
+    { id: "observatory", label: "Observatory", icon: Activity, shortcut: "3", description: "Planetary monitoring & biophysical telemetry" },
+    { id: "world-model", label: "World Model", icon: GitFork, shortcut: "4", description: "Ontological knowledge graph & causal topology" },
+    { id: "systems-modeling", label: "Systems Modeling", icon: Layers, shortcut: "5", description: "Hydrology, energy & cross-sector stock-flows" },
+    { id: "possibility-space", label: "Possibility Space", icon: Sparkles, shortcut: "6", description: "Counterfactual futures & frontier interventions" },
+    { id: "studio", label: "Studio (Innovation)", icon: Compass, shortcut: "7", description: "Regenerative venture & prototype incubator" },
+    { id: "mission-control", label: "Mission Control", icon: ShieldCheck, shortcut: "8", description: "Command center for high-stakes interventions" },
+    { id: "capital-intelligence", label: "7-Capitals & Finance", icon: BarChart3, shortcut: "9", description: "Multi-capital balance sheet & non-extractive yields" },
+    { id: "civilization-dashboard", label: "Civilization Health", icon: Cpu, shortcut: "0", description: "Planetary boundaries & systemic vitality index" },
+    { id: "scenario-engine", label: "Scenario Engine", icon: Radio, shortcut: "S", description: "Monte Carlo stress-testing & policy sandboxes" },
+    { id: "agents", label: "AI Agent Swarm", icon: Flame, shortcut: "G", description: "Multi-agent autonomous cognitive orchestrator" },
+    { id: "patterns-memory", label: "Memory & Patterns", icon: BookOpen, shortcut: "M", description: "Historical wisdom & archetypal pattern repository" },
+    { id: "sdk-api", label: "SDK & API", icon: Terminal, shortcut: "K", description: "Developer primitives & sovereign machine interface" },
   ];
 
   return (
@@ -88,85 +97,161 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Zen Mode Switcher */}
           {onToggleZenMode && (
-            <button
-              id="btn-nav-zen-mode"
-              onClick={onToggleZenMode}
-              className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium transition-all border flex items-center space-x-1.5 ${
-                isZenMode
-                  ? "bg-[#181308] border-[#c5a059] text-[#c5a059] font-bold"
-                  : "bg-[#0c0c0c] hover:bg-[#141414] border-white/15 text-white/70 hover:text-white"
-              }`}
-              title="Toggle Contemplative Zen Mode (Z)"
-            >
-              <Sun className="w-3 h-3 text-[#c5a059]" />
-              <span className="hidden md:inline">ZEN</span>
-              <kbd className="text-[9px] bg-white/10 px-1 text-white/70 font-mono">Z</kbd>
-            </button>
+            <div className="relative group/zen">
+              <button
+                id="btn-nav-zen-mode"
+                onClick={onToggleZenMode}
+                className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium transition-all border flex items-center space-x-1.5 ${
+                  isZenMode
+                    ? "bg-[#181308] border-[#c5a059] text-[#c5a059] font-bold"
+                    : "bg-[#0c0c0c] hover:bg-[#141414] border-white/15 text-white/70 hover:text-white"
+                }`}
+              >
+                <Sun className="w-3 h-3 text-[#c5a059]" />
+                <span className="hidden md:inline">ZEN</span>
+                <kbd className="text-[9px] bg-white/10 px-1 text-white/70 font-mono">Z</kbd>
+              </button>
+
+              {/* Minimalist Tooltip */}
+              <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/zen:opacity-100 group-hover/zen:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+                <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                  <span className="text-white/80">Contemplative Zen Mode</span>
+                  <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">Z</kbd>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Quick Command Palette Button */}
-          <button
-            id="btn-nav-command-palette"
-            onClick={onOpenCommandPalette}
-            className="px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-[#0c0c0c] hover:bg-[#141414] border border-white/15 text-white/70 hover:text-white transition-all flex items-center space-x-1.5"
-            title="Open Command Palette (Ctrl+K / ⌘K)"
-          >
-            <Search className="w-3 h-3 text-[#c5a059]" />
-            <span className="hidden sm:inline">PALETTE</span>
-            <kbd className="text-[9px] bg-white/10 px-1 text-white/70 font-mono">⌘K</kbd>
-          </button>
+          <div className="relative group/pal">
+            <button
+              id="btn-nav-command-palette"
+              onClick={onOpenCommandPalette}
+              className="px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-[#0c0c0c] hover:bg-[#141414] border border-white/15 text-white/70 hover:text-white transition-all flex items-center space-x-1.5"
+            >
+              <Search className="w-3 h-3 text-[#c5a059]" />
+              <span className="hidden sm:inline">PALETTE</span>
+              <kbd className="text-[9px] bg-white/10 px-1 text-white/70 font-mono">⌘K</kbd>
+            </button>
+
+            {/* Minimalist Tooltip */}
+            <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/pal:opacity-100 group-hover/pal:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+              <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                <span className="text-white/80">Socratic Command Palette</span>
+                <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">⌘K</kbd>
+              </div>
+            </div>
+          </div>
 
           {/* Real-time Telemetry Stream Trigger */}
-          <button
-            id="btn-nav-telemetry"
-            onClick={onToggleTelemetry}
-            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium transition-all border flex items-center space-x-1.5 ${
-              isTelemetryOpen
-                ? "bg-[#181308] border-[#c5a059] text-[#c5a059] font-bold"
-                : "bg-[#0c0c0c] hover:bg-[#141414] border-white/15 text-white/70 hover:text-white"
-            }`}
-            title="Toggle Live Real-Time Telemetry Stream (T)"
-          >
-            <Terminal className="w-3 h-3 text-[#c5a059]" />
-            <span className="hidden md:inline">LOGS</span>
-            <kbd className="text-[9px] bg-white/10 px-1 text-white/70 font-mono">T</kbd>
-          </button>
+          <div className="relative group/telem">
+            <button
+              id="btn-nav-telemetry"
+              onClick={onToggleTelemetry}
+              className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium transition-all border flex items-center space-x-1.5 ${
+                isTelemetryOpen
+                  ? "bg-[#181308] border-[#c5a059] text-[#c5a059] font-bold"
+                  : "bg-[#0c0c0c] hover:bg-[#141414] border-white/15 text-white/70 hover:text-white"
+              }`}
+            >
+              <Terminal className="w-3 h-3 text-[#c5a059]" />
+              <span className="hidden md:inline">LOGS</span>
+              <kbd className="text-[9px] bg-white/10 px-1 text-white/70 font-mono">T</kbd>
+            </button>
+
+            {/* Minimalist Tooltip */}
+            <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/telem:opacity-100 group-hover/telem:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+              <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                <span className="text-white/80">Swarm Telemetry & Latency</span>
+                <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">T</kbd>
+              </div>
+            </div>
+          </div>
 
           {/* Africa / Kenya Lens Switcher */}
-          <button
-            id="btn-toggle-africa-mode"
-            onClick={onToggleAfricaMode}
-            className={`px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium transition-all border ${
-              africaMode
-                ? "bg-[#c5a059]/10 border-[#c5a059] text-[#c5a059]"
-                : "bg-transparent border-white/20 text-white/50 hover:text-white hover:border-white/40"
-            }`}
-            title="Toggle specialized Africa/Kenya economic, infrastructure, and institutional intelligence lens (A)"
-          >
-            {africaMode ? "✦ AFRICA LENS" : "GLOBAL LENS"}
-          </button>
+          <div className="relative group/africa">
+            <button
+              id="btn-toggle-africa-mode"
+              onClick={onToggleAfricaMode}
+              className={`px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium transition-all border ${
+                africaMode
+                  ? "bg-[#c5a059]/10 border-[#c5a059] text-[#c5a059]"
+                  : "bg-transparent border-white/20 text-white/50 hover:text-white hover:border-white/40"
+              }`}
+            >
+              {africaMode ? "✦ AFRICA LENS" : "GLOBAL LENS"}
+            </button>
+
+            {/* Minimalist Tooltip */}
+            <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/africa:opacity-100 group-hover/africa:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+              <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                <span className="text-white/80">Kenya & African Corridor Lens</span>
+                <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">A</kbd>
+              </div>
+            </div>
+          </div>
 
           {/* Canon of Greatness Drawer Trigger */}
-          <button
-            id="btn-open-canon"
-            onClick={onOpenCanon}
-            className="px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-[#0c0c0c] hover:bg-[#141414] border border-white/15 text-white/70 hover:text-white transition-all flex items-center space-x-1.5"
-            title="Open 20 Canon Pillars (C)"
-          >
-            <BookOpen className="w-3 h-3 text-[#c5a059]" />
-            <span>20 CANON</span>
-          </button>
+          <div className="relative group/canon">
+            <button
+              id="btn-open-canon"
+              onClick={onOpenCanon}
+              className="px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-[#0c0c0c] hover:bg-[#141414] border border-white/15 text-white/70 hover:text-white transition-all flex items-center space-x-1.5"
+            >
+              <BookOpen className="w-3 h-3 text-[#c5a059]" />
+              <span>20 CANON</span>
+            </button>
+
+            {/* Minimalist Tooltip */}
+            <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/canon:opacity-100 group-hover/canon:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+              <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                <span className="text-white/80">20 Canon Pillars of Civilizational Greatness</span>
+                <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">C</kbd>
+              </div>
+            </div>
+          </div>
+
+          {/* System Settings & Display Preferences Trigger */}
+          {onOpenSettings && (
+            <div className="relative group/settings">
+              <button
+                id="btn-open-settings"
+                onClick={onOpenSettings}
+                className="px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-[#0c0c0c] hover:bg-[#141414] border border-white/15 text-white/70 hover:text-white transition-all flex items-center space-x-1.5"
+              >
+                <Sliders className="w-3 h-3 text-[#c5a059]" />
+                <span className="hidden lg:inline">SETTINGS</span>
+              </button>
+
+              {/* Minimalist Tooltip */}
+              <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/settings:opacity-100 group-hover/settings:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+                <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                  <span className="text-white/80">Data Theme & Preferences</span>
+                  <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">S</kbd>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Daily Atlas Brief Trigger */}
-          <button
-            id="btn-open-daily-brief"
-            onClick={onOpenDailyBrief}
-            className="px-3.5 py-1 text-[10px] uppercase tracking-[0.25em] font-bold bg-[#c5a059] hover:bg-[#b08d48] text-[#080808] transition-all flex items-center space-x-1.5 shadow-sm"
-            title="Open Daily Executive Brief (B)"
-          >
-            <Activity className="w-3 h-3" />
-            <span className="hidden sm:inline">DAILY BRIEF</span>
-          </button>
+          <div className="relative group/brief">
+            <button
+              id="btn-open-daily-brief"
+              onClick={onOpenDailyBrief}
+              className="px-3.5 py-1 text-[10px] uppercase tracking-[0.25em] font-bold bg-[#c5a059] hover:bg-[#b08d48] text-[#080808] transition-all flex items-center space-x-1.5 shadow-sm"
+            >
+              <Activity className="w-3 h-3" />
+              <span className="hidden sm:inline">DAILY BRIEF</span>
+            </button>
+
+            {/* Minimalist Tooltip */}
+            <div className="absolute right-0 top-full mt-1.5 z-50 opacity-0 pointer-events-none group-hover/brief:opacity-100 group-hover/brief:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+              <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                <span className="text-white/80">Executive Daily Intelligence Brief</span>
+                <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">B</kbd>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -202,39 +287,67 @@ export const Navigation: React.FC<NavigationProps> = ({
             <kbd className="text-[9px] font-mono px-1.5 py-0.5 bg-white/5 group-hover:bg-[#c5a059]/20 group-hover:text-[#c5a059] text-white/40 border border-white/10 transition-colors">
               ⌘K
             </kbd>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenShortcuts();
-              }}
-              title="View Keyboard Shortcuts (?)"
-              className="p-1 hover:text-white text-white/40 hover:bg-white/10"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-            </button>
+            <div className="relative group/help">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenShortcuts();
+                }}
+                className="p-1 hover:text-white text-white/40 hover:bg-white/10"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Help Tooltip */}
+              <div className="absolute right-0 top-full mt-2 z-50 opacity-0 pointer-events-none group-hover/help:opacity-100 group-hover/help:pointer-events-auto transition-opacity duration-150 whitespace-nowrap">
+                <div className="bg-[#111111] border border-[#c5a059]/40 shadow-xl px-2.5 py-1 text-[10px] font-mono text-white flex items-center space-x-2">
+                  <span>Keyboard Shortcuts Matrix</span>
+                  <kbd className="bg-white/10 text-[#c5a059] px-1 py-0.2 text-[9px] font-bold">?</kbd>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Space Selector Horizontal Scroll Navigation */}
+      {/* Space Selector Horizontal Scroll Navigation with Minimalist Tooltips */}
       <div className="px-6 sm:px-10 border-t border-white/10 overflow-x-auto scrollbar-none flex space-x-6 py-2.5 text-xs bg-[#080808]">
         {primaryNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentSpace === item.id;
           return (
-            <button
-              key={item.id}
-              id={`nav-item-${item.id}`}
-              onClick={() => onSelectSpace(item.id)}
-              className={`pb-1 text-[10px] uppercase tracking-[0.25em] font-medium transition-all flex items-center space-x-2 shrink-0 ${
-                isActive
-                  ? "text-white border-b-2 border-[#c5a059] font-bold"
-                  : "text-white/45 hover:text-white/90 border-b-2 border-transparent"
-              }`}
-            >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#c5a059]" : "text-white/40"}`} />
-              <span>{item.label}</span>
-            </button>
+            <div key={item.id} className="relative group/nav shrink-0">
+              <button
+                id={`nav-item-${item.id}`}
+                onClick={() => onSelectSpace(item.id)}
+                className={`pb-1 text-[10px] uppercase tracking-[0.25em] font-medium transition-all flex items-center space-x-2 ${
+                  isActive
+                    ? "text-white border-b-2 border-[#c5a059] font-bold"
+                    : "text-white/45 hover:text-white/90 border-b-2 border-transparent"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#c5a059]" : "text-white/40"}`} />
+                <span>{item.label}</span>
+              </button>
+
+              {/* Contextual Minimalist Tooltip on Hover */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 opacity-0 pointer-events-none group-hover/nav:opacity-100 group-hover/nav:pointer-events-auto translate-y-1 group-hover/nav:translate-y-0 transition-all duration-150 ease-out whitespace-nowrap shadow-2xl">
+                <div className="bg-[#0f0f0f] border border-[#c5a059]/40 px-3 py-1.5 text-left font-mono text-[10px] space-y-0.5 backdrop-blur-md">
+                  <div className="flex items-center space-x-2.5">
+                    <span className="text-white font-medium">{item.label}</span>
+                    <span className="text-white/30 text-[8px] uppercase">KEY:</span>
+                    <kbd className="px-1.5 py-0.5 bg-white/10 text-[#c5a059] border border-[#c5a059]/40 text-[9px] font-bold font-mono">
+                      {item.shortcut}
+                    </kbd>
+                  </div>
+                  {item.description && (
+                    <p className="text-[9px] text-white/50 font-sans normal-case tracking-normal max-w-xs truncate">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>

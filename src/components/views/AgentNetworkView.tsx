@@ -13,11 +13,13 @@ import {
   Download,
   Trash2,
   Zap,
-  Terminal
+  Terminal,
+  ListTodo
 } from "lucide-react";
 import { AIAgentProfile, NavigationSpace } from "../../types";
 import { ATLAS_AI_AGENTS } from "../../data/seedData";
 import { dispatchGeminiInquiry } from "../../services/api";
+import { PendingTasksSidebar } from "../agent/PendingTasksSidebar";
 
 interface AgentNetworkViewProps {
   onNavigate: (space: NavigationSpace) => void;
@@ -30,6 +32,7 @@ export const AgentNetworkView: React.FC<AgentNetworkViewProps> = ({
 }) => {
   const [agents, setAgents] = useState<AIAgentProfile[]>(ATLAS_AI_AGENTS);
   const [selectedAgent, setSelectedAgent] = useState<AIAgentProfile>(ATLAS_AI_AGENTS[0]);
+  const [showPendingTasks, setShowPendingTasks] = useState(true);
 
   // Deliberation Swarm State
   const [deliberationTopic, setDeliberationTopic] = useState("");
@@ -161,6 +164,14 @@ ${item.message}
     URL.revokeObjectURL(url);
   };
 
+  const handleSelectTaskToDeliberate = (taskTitle: string, agentCode: string) => {
+    const targetAgent = agents.find((a) => a.code === agentCode);
+    if (targetAgent) {
+      setSelectedAgent(targetAgent);
+    }
+    setDeliberationTopic(`Deliberate on pending operation: "${taskTitle}"`);
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn text-[#f2f2f2] pb-20">
       {/* Header */}
@@ -178,14 +189,32 @@ ${item.message}
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="p-4 bg-[#080808] border border-white/10 text-xs font-mono flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Toggle Pending Tasks Sidebar Button */}
+          <button
+            id="btn-toggle-pending-tasks"
+            onClick={() => setShowPendingTasks(!showPendingTasks)}
+            className={`px-3 py-2 border text-xs font-mono transition-all flex items-center space-x-1.5 shadow-sm ${
+              showPendingTasks
+                ? "bg-[#161616] border-[#c5a059] text-[#c5a059]"
+                : "bg-[#0c0c0c] hover:bg-[#141414] border-white/10 text-white/70 hover:text-white"
+            }`}
+            title="Toggle Swarm Pending Tasks Sidebar"
+          >
+            <ListTodo className="w-3.5 h-3.5 text-[#c5a059]" />
+            <span>PENDING TASKS</span>
+            <span className="px-1.5 py-0.5 bg-[#c5a059]/20 text-[#c5a059] text-[9px] font-bold">
+              5
+            </span>
+          </button>
+
+          <div className="p-3 bg-[#080808] border border-white/10 text-xs font-mono flex items-center space-x-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
             <span className="text-white/60 text-[10px] uppercase tracking-wider">10 AGENTS SYNCHRONIZED</span>
           </div>
           <button
             onClick={handleExportTranscript}
-            className="p-4 bg-[#121212] hover:bg-[#1c1c1c] border border-white/10 text-white/80 hover:text-white text-xs font-mono transition-all flex items-center space-x-1.5"
+            className="p-3 bg-[#121212] hover:bg-[#1c1c1c] border border-white/10 text-white/80 hover:text-white text-xs font-mono transition-all flex items-center space-x-1.5"
             title="Export Swarm Transcript"
           >
             <Download className="w-3.5 h-3.5 text-[#c5a059]" />
@@ -222,10 +251,10 @@ ${item.message}
         })}
       </div>
 
-      {/* 2-Column Split: Selected Agent Profile + Live Cooperative Deliberation Room */}
+      {/* 2- or 3-Column Split: Selected Agent Profile + Live Cooperative Deliberation Room + Pending Tasks Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Selected Agent Deep-Dive (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Left Column: Selected Agent Deep-Dive */}
+        <div className={showPendingTasks ? "lg:col-span-4 space-y-4" : "lg:col-span-5 space-y-4"}>
           <div className="p-8 bg-[#0c0c0c] border border-white/10 space-y-6">
             <div className="space-y-1.5 border-b border-white/10 pb-4">
               <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.25em] text-[#c5a059]">
@@ -281,8 +310,8 @@ ${item.message}
           </div>
         </div>
 
-        {/* Right Column: Live Cooperative Deliberation Room (7 cols) */}
-        <div className="lg:col-span-7 space-y-4">
+        {/* Center / Right Column: Live Cooperative Deliberation Room */}
+        <div className={showPendingTasks ? "lg:col-span-5 space-y-4" : "lg:col-span-7 space-y-4"}>
           <div className="p-8 bg-[#0c0c0c] border border-white/10 space-y-5 flex flex-col h-[600px]">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center space-x-2 text-[10px] font-mono tracking-[0.25em] uppercase text-[#c5a059]">
@@ -365,6 +394,16 @@ ${item.message}
             </div>
           </div>
         </div>
+
+        {/* Right Column: Pending Tasks Sidebar */}
+        {showPendingTasks && (
+          <div className="lg:col-span-3 space-y-4">
+            <PendingTasksSidebar
+              onSelectTaskToDeliberate={handleSelectTaskToDeliberate}
+              onClose={() => setShowPendingTasks(false)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

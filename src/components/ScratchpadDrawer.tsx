@@ -97,7 +97,8 @@ export const ScratchpadDrawer: React.FC<ScratchpadDrawerProps> = ({
 
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) {
-      alert("Web Speech API is not supported in this browser. Please use keyboard or Chrome/Edge.");
+      setSpeechError("Web Speech API is unavailable in this environment. Please type or open in full window.");
+      setTimeout(() => setSpeechError(null), 5000);
       return;
     }
 

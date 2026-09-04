@@ -15,7 +15,12 @@ import {
   Scale,
   RefreshCw,
   Zap,
-  Globe
+  Globe,
+  Landmark,
+  Building,
+  AlertTriangle,
+  Percent,
+  TrendingDown
 } from "lucide-react";
 import { SevenCapitalsAnalysis, NavigationSpace } from "../../types";
 import { SEVEN_CAPITALS_DATA } from "../../data/seedData";
@@ -25,13 +30,23 @@ interface CapitalIntelligenceViewProps {
   africaMode: boolean;
 }
 
+interface SyndicatedFacility {
+  id: string;
+  institution: string;
+  type: "Catalytic Grant" | "Concessional Debt" | "Community Equity" | "Green Guarantee";
+  amountUSD: number;
+  covenant: string;
+  maxReturnCap: string;
+  status: "Committed" | "Syndicating" | "Disbursing";
+}
+
 export const CapitalIntelligenceView: React.FC<CapitalIntelligenceViewProps> = ({
   onNavigate,
   africaMode,
 }) => {
   const [capitals, setCapitals] = useState<SevenCapitalsAnalysis[]>(SEVEN_CAPITALS_DATA);
   const [selectedCapital, setSelectedCapital] = useState<SevenCapitalsAnalysis>(SEVEN_CAPITALS_DATA[0]);
-  const [activeTab, setActiveTab] = useState<"structurer" | "comparison" | "ledger">("structurer");
+  const [activeTab, setActiveTab] = useState<"structurer" | "ledger" | "stresstest" | "comparison">("structurer");
 
   // Interactive Blended Finance Slider States
   const [totalFundingTarget, setTotalFundingTarget] = useState(250000); // $250k USD
@@ -39,12 +54,72 @@ export const CapitalIntelligenceView: React.FC<CapitalIntelligenceViewProps> = (
   const [concessionalDebtPct, setConcessionalDebtPct] = useState(45);
   const [communityEquityPct, setCommunityEquityPct] = useState(30);
 
+  // Macro Shock Stress-Test Toggles
+  const [macroShocks, setMacroShocks] = useState({
+    currencyDevaluation: false, // -20% KES/USD
+    severeDrought: false, // +2.8°C regional heatwave
+    interestRateSpike: false, // +350 bps global rates
+    carbonPriceSurge: false, // +50% voluntary carbon premium
+  });
+
+  // Syndicated Facilities Ledger
+  const [facilities, setFacilities] = useState<SyndicatedFacility[]>([
+    {
+      id: "fac-01",
+      institution: "Green Climate Fund (GCF) Catalytic Window",
+      type: "Catalytic Grant",
+      amountUSD: 62500,
+      covenant: "100% First-Loss absorption; zero liquidation claims on community land assets",
+      maxReturnCap: "0.0% (Pure Concessional Grant)",
+      status: "Committed",
+    },
+    {
+      id: "fac-02",
+      institution: "African Development Bank (AfDB) Urban Resilience Facility",
+      type: "Concessional Debt",
+      amountUSD: 112500,
+      covenant: "Subordinated 15-year green debenture with 4-year principal grace period",
+      maxReturnCap: "3.2% Fixed Non-Extractive Coupon",
+      status: "Disbursing",
+    },
+    {
+      id: "fac-03",
+      institution: "Nairobi Basin Community Cooperative SACCO",
+      type: "Community Equity",
+      amountUSD: 75000,
+      covenant: "Perpetual revenue-share dividend; voting rights held in collective trust",
+      maxReturnCap: "100% Retained in Local Commons",
+      status: "Committed",
+    },
+    {
+      id: "fac-04",
+      institution: "East Africa Ecological Guarantee Trust",
+      type: "Green Guarantee",
+      amountUSD: 50000,
+      covenant: "De-risks local contractor payment rails against municipal fiscal delay",
+      maxReturnCap: "1.0% Guarantee Fee",
+      status: "Syndicating",
+    },
+  ]);
+
   const grantUSD = (totalFundingTarget * catalyticGrantPct) / 100;
   const debtUSD = (totalFundingTarget * concessionalDebtPct) / 100;
   const equityUSD = (totalFundingTarget * communityEquityPct) / 100;
 
+  // Compute multi-capital score with optional macro shocks
+  const computeAdjustedScore = (cap: SevenCapitalsAnalysis) => {
+    let score = cap.netScore;
+    if (macroShocks.currencyDevaluation && cap.capital === "Financial") score -= 12;
+    if (macroShocks.severeDrought && cap.capital === "Natural") score -= 15;
+    if (macroShocks.severeDrought && cap.capital === "Human") score -= 8;
+    if (macroShocks.interestRateSpike && cap.capital === "Financial") score -= 10;
+    if (macroShocks.carbonPriceSurge && cap.capital === "Natural") score += 12;
+    if (macroShocks.carbonPriceSurge && cap.capital === "Financial") score += 8;
+    return Math.max(5, Math.min(100, score));
+  };
+
   const averageHealth = Math.round(
-    capitals.reduce((acc, curr) => acc + curr.netScore, 0) / capitals.length
+    capitals.reduce((acc, curr) => acc + computeAdjustedScore(curr), 0) / capitals.length
   );
 
   const handleScoreUpdate = (capitalName: string, delta: number) => {
@@ -64,20 +139,47 @@ export const CapitalIntelligenceView: React.FC<CapitalIntelligenceViewProps> = (
     }
   };
 
+  // Blueprint preset loader
+  const loadBlueprint = (name: string) => {
+    if (name === "sponge") {
+      setTotalFundingTarget(250000);
+      setCatalyticGrantPct(35);
+      setConcessionalDebtPct(35);
+      setCommunityEquityPct(30);
+    } else if (name === "geothermal") {
+      setTotalFundingTarget(650000);
+      setCatalyticGrantPct(20);
+      setConcessionalDebtPct(55);
+      setCommunityEquityPct(25);
+    } else if (name === "biochar") {
+      setTotalFundingTarget(400000);
+      setCatalyticGrantPct(40);
+      setConcessionalDebtPct(30);
+      setCommunityEquityPct(30);
+    }
+  };
+
   const handleExportArchitecture = () => {
     const summary = `# ATLAS 7-CAPITALS & BLENDED FINANCE ARCHITECTURE
 Date: ${new Date().toISOString().slice(0, 10)}
 Target Funding: $${totalFundingTarget.toLocaleString()} USD
+Multi-Capital Systemic Index: ${averageHealth}/100
 
 ## BLENDED CAPITAL STRUCTURE
-- Catalytic First-Loss Grant: ${catalyticGrantPct}% ($${grantUSD.toLocaleString()})
-- Patient Concessional Debt / Green Bond: ${concessionalDebtPct}% ($${debtUSD.toLocaleString()})
-- Community Cooperative Equity: ${communityEquityPct}% ($${equityUSD.toLocaleString()})
+- Catalytic First-Loss Grant: ${catalyticGrantPct}% ($${grantUSD.toLocaleString()} USD)
+- Patient Concessional Debt / Green Bond: ${concessionalDebtPct}% ($${debtUSD.toLocaleString()} USD)
+- Community Cooperative Equity: ${communityEquityPct}% ($${equityUSD.toLocaleString()} USD)
 
 ## 7-CAPITALS BALANCE SHEET
-${capitals.map((c) => `- ${c.capital}: ${c.netScore}/100 | ${c.valueCreated}`).join("\n")}
+${capitals.map((c) => `- ${c.capital}: ${computeAdjustedScore(c)}/100 | ${c.valueCreated}`).join("\n")}
 
-Holistic Capital Index: ${averageHealth}/100
+## SYNDICATED INSTITUTIONAL FACILITIES
+${facilities
+  .map(
+    (f) =>
+      `- [${f.status.toUpperCase()}] ${f.institution}: $${f.amountUSD.toLocaleString()} USD (${f.type}) - ${f.maxReturnCap}`
+  )
+  .join("\n")}
 `;
     const blob = new Blob([summary], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -121,10 +223,41 @@ Holistic Capital Index: ${averageHealth}/100
         </div>
       </div>
 
-      {/* 7-Capitals Multi-Metric Cards */}
+      {/* Preset Systemic Blueprints Bar */}
+      <div className="p-3.5 bg-[#0a0a0a] border border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-white/40 text-[10px] uppercase tracking-wider px-1">Preset Systemic Blueprints:</span>
+          <button
+            onClick={() => loadBlueprint("sponge")}
+            className="px-3 py-1 bg-[#121212] hover:bg-[#181818] border border-white/10 text-white/80 hover:text-white text-[10px] uppercase tracking-wider"
+          >
+            Kibera Sponge Corridor ($250k)
+          </button>
+          <button
+            onClick={() => loadBlueprint("geothermal")}
+            className="px-3 py-1 bg-[#121212] hover:bg-[#181818] border border-white/10 text-white/80 hover:text-white text-[10px] uppercase tracking-wider"
+          >
+            Rift Valley Cold Chain ($650k)
+          </button>
+          <button
+            onClick={() => loadBlueprint("biochar")}
+            className="px-3 py-1 bg-[#121212] hover:bg-[#181818] border border-white/10 text-white/80 hover:text-white text-[10px] uppercase tracking-wider"
+          >
+            Bagasse Biochar Soil Belt ($400k)
+          </button>
+        </div>
+
+        <div className="text-[10px] text-emerald-400 flex items-center space-x-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Non-Extractive Maximum Dividend Cap: 4.8% APR</span>
+        </div>
+      </div>
+
+      {/* 7-Capitals Multi-Metric Cards with Visual Spectrum */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {capitals.map((cap) => {
           const isSelected = selectedCapital.capital === cap.capital;
+          const currentScore = computeAdjustedScore(cap);
           return (
             <div
               key={cap.capital}
@@ -137,19 +270,19 @@ Holistic Capital Index: ${averageHealth}/100
             >
               <div className="flex items-center justify-between text-[10px] font-mono">
                 <span className="uppercase text-white/70 font-bold">{cap.capital}</span>
-                <span className="text-[#c5a059] font-bold">{cap.netScore}</span>
+                <span className="text-[#c5a059] font-bold">{currentScore}</span>
               </div>
 
               <div className="w-full bg-[#080808] h-1.5 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-emerald-500 to-[#c5a059] h-full transition-all duration-500"
-                  style={{ width: `${cap.netScore}%` }}
+                  style={{ width: `${currentScore}%` }}
                 ></div>
               </div>
 
               <div className="flex items-center justify-between text-[9px] font-mono text-white/40">
-                <span>Index Score</span>
-                <span className="text-emerald-400 font-semibold">+{cap.netScore}</span>
+                <span>Vitality</span>
+                <span className="text-emerald-400 font-semibold">+{currentScore}</span>
               </div>
             </div>
           );
@@ -158,31 +291,31 @@ Holistic Capital Index: ${averageHealth}/100
 
       {/* Sub-Navigation Tabs */}
       <div className="flex border-b border-white/10 text-xs font-mono">
-        <button
-          onClick={() => setActiveTab("structurer")}
-          className={`px-6 py-3 border-b-2 font-bold tracking-wider transition-all flex items-center space-x-2 ${
-            activeTab === "structurer"
-              ? "border-[#c5a059] text-[#c5a059] bg-[#0c0c0c]"
-              : "border-transparent text-white/40 hover:text-white"
-          }`}
-        >
-          <DollarSign className="w-3.5 h-3.5" />
-          <span>BLENDED STACK STRUCTURER</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("comparison")}
-          className={`px-6 py-3 border-b-2 font-bold tracking-wider transition-all flex items-center space-x-2 ${
-            activeTab === "comparison"
-              ? "border-[#c5a059] text-[#c5a059] bg-[#0c0c0c]"
-              : "border-transparent text-white/40 hover:text-white"
-          }`}
-        >
-          <Scale className="w-3.5 h-3.5" />
-          <span>EXTRACTIVE VS. REGENERATIVE MODEL</span>
-        </button>
+        {[
+          { id: "structurer", label: "BLENDED STACK STRUCTURER", icon: DollarSign },
+          { id: "ledger", label: "SYNDICATED FACILITIES LEDGER", icon: Landmark },
+          { id: "stresstest", label: "MACRO SHOCK STRESS-TESTER", icon: AlertTriangle },
+          { id: "comparison", label: "EXTRACTIVE VS. REGENERATIVE", icon: Scale },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-5 py-3 border-b-2 font-bold tracking-wider transition-all flex items-center space-x-2 ${
+                activeTab === tab.id
+                  ? "border-[#c5a059] text-[#c5a059] bg-[#0c0c0c]"
+                  : "border-transparent text-white/40 hover:text-white"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Main Tab Content */}
+      {/* TAB 1: BLENDED STACK STRUCTURER */}
       {activeTab === "structurer" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Selected Capital Audit (6 cols) */}
@@ -206,7 +339,9 @@ Holistic Capital Index: ${averageHealth}/100
                   >
                     -5
                   </button>
-                  <span className="px-2 font-bold text-[#c5a059]">{selectedCapital.netScore}/100</span>
+                  <span className="px-2 font-bold text-[#c5a059]">
+                    {computeAdjustedScore(selectedCapital)}/100
+                  </span>
                   <button
                     onClick={() => handleScoreUpdate(selectedCapital.capital, 5)}
                     className="px-2 py-1 bg-white/5 hover:bg-white/10 text-white/80"
@@ -281,7 +416,7 @@ Holistic Capital Index: ${averageHealth}/100
                 <input
                   type="range"
                   min="50000"
-                  max="1000000"
+                  max="1500000"
                   step="25000"
                   value={totalFundingTarget}
                   onChange={(e) => setTotalFundingTarget(Number(e.target.value))}
@@ -370,7 +505,172 @@ Holistic Capital Index: ${averageHealth}/100
         </div>
       )}
 
-      {/* Comparison Tab */}
+      {/* TAB 2: SYNDICATED FACILITIES LEDGER */}
+      {activeTab === "ledger" && (
+        <div className="p-8 bg-[#0c0c0c] border border-white/10 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div>
+              <h3 className="font-serif text-2xl text-white">Institutional Syndicated Capital Ledger</h3>
+              <p className="text-xs text-white/50 font-serif italic">
+                Active institutional anchor commitments, non-extractive covenants, and community equity safeguards.
+              </p>
+            </div>
+            <div className="text-xs font-mono text-[#c5a059]">
+              Total Syndicated: ${facilities.reduce((a, b) => a + b.amountUSD, 0).toLocaleString()} USD
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {facilities.map((fac) => (
+              <div
+                key={fac.id}
+                className="p-5 bg-[#080808] border border-white/10 space-y-3 font-mono text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Building className="w-4 h-4 text-[#c5a059]" />
+                    <span className="font-bold text-white text-sm">{fac.institution}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#c5a059] font-bold">${fac.amountUSD.toLocaleString()} USD</span>
+                    <span
+                      className={`px-2 py-0.5 border text-[9px] uppercase ${
+                        fac.status === "Committed"
+                          ? "bg-[#0a1610] text-emerald-300 border-emerald-800"
+                          : fac.status === "Disbursing"
+                          ? "bg-sky-950 text-sky-300 border-sky-800"
+                          : "bg-amber-950 text-amber-300 border-amber-800"
+                      }`}
+                    >
+                      {fac.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans text-white/70 pt-2 border-t border-white/5">
+                  <div>
+                    <span className="text-[10px] font-mono text-white/40 uppercase block">Tranche Type & Covenant:</span>
+                    <span>{fac.type} • {fac.covenant}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-white/40 uppercase block">Yield / Cap Term:</span>
+                    <span className="text-emerald-400 font-mono">{fac.maxReturnCap}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: MACRO SHOCK STRESS-TESTER */}
+      {activeTab === "stresstest" && (
+        <div className="p-8 bg-[#0c0c0c] border border-white/10 space-y-6">
+          <div className="space-y-2 border-b border-white/10 pb-4">
+            <h3 className="font-serif text-2xl text-white">Macro Volatility & Systemic Stress-Testing</h3>
+            <p className="text-xs text-white/50 font-serif italic">
+              Evaluate how the blended capital stack and 7-capitals balance sheet withstand macroeconomic shocks, currency fluctuations, and extreme weather events.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              onClick={() =>
+                setMacroShocks((p) => ({ ...p, currencyDevaluation: !p.currencyDevaluation }))
+              }
+              className={`p-5 border text-left space-y-2 transition-all ${
+                macroShocks.currencyDevaluation
+                  ? "bg-rose-950/40 border-rose-600 text-rose-200"
+                  : "bg-[#080808] hover:bg-[#121212] border-white/10 text-white/70"
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span>KES/USD DEVALUATION</span>
+                <span>{macroShocks.currencyDevaluation ? "ACTIVE" : "OFF"}</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-snug">
+                Simulate 20% local currency depreciation against USD equipment procurement.
+              </p>
+            </button>
+
+            <button
+              onClick={() => setMacroShocks((p) => ({ ...p, severeDrought: !p.severeDrought }))}
+              className={`p-5 border text-left space-y-2 transition-all ${
+                macroShocks.severeDrought
+                  ? "bg-rose-950/40 border-rose-600 text-rose-200"
+                  : "bg-[#080808] hover:bg-[#121212] border-white/10 text-white/70"
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span>+2.8°C DROUGHT CRISIS</span>
+                <span>{macroShocks.severeDrought ? "ACTIVE" : "OFF"}</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-snug">
+                Tests aquifer recharge depletion and smallholder vegetable crop stress.
+              </p>
+            </button>
+
+            <button
+              onClick={() =>
+                setMacroShocks((p) => ({ ...p, interestRateSpike: !p.interestRateSpike }))
+              }
+              className={`p-5 border text-left space-y-2 transition-all ${
+                macroShocks.interestRateSpike
+                  ? "bg-rose-950/40 border-rose-600 text-rose-200"
+                  : "bg-[#080808] hover:bg-[#121212] border-white/10 text-white/70"
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span>+350 BPS RATE HIKE</span>
+                <span>{macroShocks.interestRateSpike ? "ACTIVE" : "OFF"}</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-snug">
+                Tests debt service coverage ratio under tightened central bank monetary policy.
+              </p>
+            </button>
+
+            <button
+              onClick={() =>
+                setMacroShocks((p) => ({ ...p, carbonPriceSurge: !p.carbonPriceSurge }))
+              }
+              className={`p-5 border text-left space-y-2 transition-all ${
+                macroShocks.carbonPriceSurge
+                  ? "bg-emerald-950/40 border-emerald-600 text-emerald-200"
+                  : "bg-[#080808] hover:bg-[#121212] border-white/10 text-white/70"
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span>+50% CARBON PREMIUM</span>
+                <span>{macroShocks.carbonPriceSurge ? "ACTIVE" : "OFF"}</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-snug">
+                Simulates elevated voluntary soil carbon offset value retained in local trust.
+              </p>
+            </button>
+          </div>
+
+          {/* Stress Test Diagnostics Outcome */}
+          <div className="p-6 bg-[#080808] border border-white/10 space-y-3 font-mono text-xs">
+            <div className="flex justify-between text-white/40 uppercase text-[10px]">
+              <span>Stress-Tested Composite Resilience Score</span>
+              <span className="text-[#c5a059] font-bold">{averageHealth}/100</span>
+            </div>
+            <div className="w-full bg-[#121212] h-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-emerald-500 to-[#c5a059] h-full transition-all duration-500"
+                style={{ width: `${averageHealth}%` }}
+              ></div>
+            </div>
+            <p className="text-white/70 font-sans text-xs pt-1">
+              {averageHealth >= 80
+                ? "The blended capital architecture maintains positive civilizational resilience. First-loss catalytic grant buffer absorbs external debt volatility."
+                : "Warning: Multiple concurrent macro shocks degrade financial and natural capital reserves. Recommend increasing catalytic first-loss allocation by +15%."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: EXTRACTIVE VS REGENERATIVE COMPARISON */}
       {activeTab === "comparison" && (
         <div className="p-8 bg-[#0c0c0c] border border-white/10 space-y-6">
           <div className="space-y-2 border-b border-white/10 pb-4">

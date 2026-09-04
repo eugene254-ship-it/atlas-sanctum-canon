@@ -16,9 +16,12 @@ import {
   AlertTriangle,
   Layers,
   ArrowDown,
-  Bell
+  Bell,
+  Cpu
 } from "lucide-react";
 import { SystemEventLog } from "./SystemEventLog";
+import { SwarmDiagnosticsPanel } from "./SwarmDiagnosticsPanel";
+import { useSystemState } from "../context/SystemContext";
 
 export type TelemetryLogLevel = "INFO" | "REASONING" | "LEVERAGE" | "WARN" | "SUCCESS";
 export type TelemetrySubsystem =
@@ -159,7 +162,7 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
   onClose,
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<"STREAM" | "EVENT_LOG">("EVENT_LOG");
+  const [activeTab, setActiveTab] = useState<"STREAM" | "EVENT_LOG" | "SWARM_DIAGNOSTICS">("SWARM_DIAGNOSTICS");
   const [logs, setLogs] = useState<TelemetryLog[]>(INITIAL_LOGS);
   const [isStreaming, setIsStreaming] = useState(true);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -301,6 +304,19 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
             {/* Tab Selector */}
             <div className="flex items-center space-x-1 bg-[#121212] p-0.5 border border-white/10 text-[10px] font-mono">
               <button
+                id="btn-telemetry-tab-swarm"
+                onClick={() => setActiveTab("SWARM_DIAGNOSTICS")}
+                className={`px-2.5 py-1 flex items-center space-x-1.5 transition-all ${
+                  activeTab === "SWARM_DIAGNOSTICS"
+                    ? "bg-[#c5a059] text-[#080808] font-bold"
+                    : "text-white/50 hover:text-white"
+                }`}
+              >
+                <Cpu className="w-3 h-3" />
+                <span>SWARM METRICS & LATENCY</span>
+              </button>
+              <button
+                id="btn-telemetry-tab-event-log"
                 onClick={() => setActiveTab("EVENT_LOG")}
                 className={`px-2.5 py-1 flex items-center space-x-1.5 transition-all ${
                   activeTab === "EVENT_LOG"
@@ -312,6 +328,7 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
                 <span>EVENT LOG & SEVERITY</span>
               </button>
               <button
+                id="btn-telemetry-tab-stream"
                 onClick={() => setActiveTab("STREAM")}
                 className={`px-2.5 py-1 flex items-center space-x-1.5 transition-all ${
                   activeTab === "STREAM"
@@ -386,7 +403,11 @@ export const SystemTelemetry: React.FC<SystemTelemetryProps> = ({
         </div>
 
         {/* Tab Content */}
-        {activeTab === "EVENT_LOG" ? (
+        {activeTab === "SWARM_DIAGNOSTICS" ? (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <SwarmDiagnosticsPanel />
+          </div>
+        ) : activeTab === "EVENT_LOG" ? (
           <div className="flex-1 overflow-hidden">
             <SystemEventLog onNavigate={onNavigate} />
           </div>

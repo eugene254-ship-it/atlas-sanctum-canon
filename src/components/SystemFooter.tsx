@@ -27,6 +27,7 @@ import {
 import { NavigationSpace } from "../types";
 import { soundscape } from "../services/soundscape";
 import { ResourceMonitor } from "./ResourceMonitor";
+import { useSystemState } from "../context/SystemContext";
 
 interface SystemFooterProps {
   currentSpace: NavigationSpace;
@@ -62,6 +63,7 @@ export const SystemFooter: React.FC<SystemFooterProps> = ({
   isScratchpadOpen = false,
   africaMode,
 }) => {
+  const { lastSavedTimestamp, lastSavedSource } = useSystemState();
   const [utcTime, setUtcTime] = useState<string>("");
   const [sessionDuration, setSessionDuration] = useState<string>("00:00");
   const [computeLoad, setComputeLoad] = useState<number>(48); // percentage
@@ -498,6 +500,34 @@ export const SystemFooter: React.FC<SystemFooterProps> = ({
           </button>
 
           <span className="text-white/20">|</span>
+
+          {/* Subtle Changes Saved Timestamp Indicator */}
+          <div
+            id="indicator-changes-saved"
+            className="flex items-center space-x-1.5 px-2 py-0.5 bg-[#121212] border border-white/10 text-[9px] font-mono transition-all group"
+            title={
+              lastSavedTimestamp
+                ? `Changes saved at ${lastSavedTimestamp} UTC (${lastSavedSource || "Active Workspace"})`
+                : "All system inputs and parameters saved"
+            }
+          >
+            <CheckCircle2
+              className={`w-2.5 h-2.5 transition-colors ${
+                lastSavedTimestamp ? "text-emerald-400" : "text-emerald-500/60"
+              }`}
+            />
+            <span className="text-white/40 hidden md:inline">SAVED:</span>
+            <span className="text-white/80 font-medium tracking-wide">
+              {lastSavedTimestamp ? `${lastSavedTimestamp} UTC` : "Synchronized"}
+            </span>
+            {lastSavedSource && (
+              <span className="hidden xl:inline text-[8px] text-[#c5a059] opacity-75 truncate max-w-[120px]">
+                · {lastSavedSource}
+              </span>
+            )}
+          </div>
+
+          <span className="hidden sm:inline text-white/20">|</span>
 
           {/* Session Duration Indicator */}
           <div

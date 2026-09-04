@@ -395,6 +395,7 @@ export interface RegenerativePattern {
 
 export interface AIAgentProfile {
   id: string;
+  code?: string;
   name: string;
   role: string;
   specialization: string;
@@ -402,6 +403,12 @@ export interface AIAgentProfile {
   currentThought: string;
   recentArtifact: string;
   status: "active" | "reasoning" | "deliberating" | "idle";
+  mission?: string;
+  capabilities?: string[];
+  cognitiveLoad?: number;
+  reasoningLatencyMs?: number;
+  confidenceIndex?: number;
+  epistemicProvenanceChain?: string[];
 }
 
 export interface CivilizationDimension {
@@ -411,4 +418,33 @@ export interface CivilizationDimension {
   trend: "improving" | "stable" | "declining";
   indicators: { name: string; value: string; delta: string }[];
   summary: string;
+  category?: string;
+  description?: string;
+  benchmarkGlobal?: string;
+  subIndicators?: { name: string; value: string; status: string }[];
+  strategicInterventions?: string[];
+  planetaryBoundaryStatus?: "Safe Operating Space" | "Increasing Risk" | "High Risk Beyond Zone";
+  leveragePoints?: string[];
+}
+
+export interface ScenarioSnapshot {
+  id: string;
+  timestamp: string;
+  name: string;
+  notes?: string;
+  scenario: "status-quo" | "local-pilot" | "10x-scale" | "assumption-failure";
+  governanceConsensus: number;
+  blendedCapitalInflow: number;
+  extremeRainfallEvent: number;
+  timeHorizonYears: number;
+  activePolicies: string[];
+  outcomes: {
+    floodLossesUSD: number;
+    residentsProtected: number;
+    jobsCreated: number;
+    biomassCapturedTons: number;
+    multiCapitalLift: string;
+    riskLevel: string;
+    narrative: string;
+  };
 }
